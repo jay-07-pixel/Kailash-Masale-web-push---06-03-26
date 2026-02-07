@@ -3,6 +3,11 @@ import './OrdersTable.css'
 
 const OrdersTable = () => {
   const [expandedRows, setExpandedRows] = useState({})
+  const [activeOrderTab, setActiveOrderTab] = useState({})
+
+  const setOrderTab = (rowId, tabIndex) => {
+    setActiveOrderTab((prev) => ({ ...prev, [rowId]: tabIndex }))
+  }
 
   const toggleRow = (id) => {
     setExpandedRows((prev) => ({
@@ -44,6 +49,12 @@ const OrdersTable = () => {
       },
       orderDetails: '250 Kg',
       status: 'Pending',
+      orders: [
+        { date: '12/01/2026', sku: 'SKU', kg: 100, scheme: 'Scheme' },
+        { date: '13/01/2026', sku: 'SKU-002', kg: 150, scheme: 'Scheme A' },
+        { date: '14/01/2026', sku: 'SKU-003', kg: 200, scheme: 'Scheme B' },
+        { date: '15/01/2026', sku: 'SKU-004', kg: 180, scheme: 'Scheme C' },
+      ],
     },
     {
       id: 2,
@@ -59,6 +70,10 @@ const OrdersTable = () => {
       },
       orderDetails: '250 Kg',
       status: 'Declined',
+      orders: [
+        { date: '10/01/2026', sku: 'SKU', kg: 80, scheme: 'Scheme' },
+        { date: '11/01/2026', sku: 'SKU-002', kg: 120, scheme: 'Scheme A' },
+      ],
     },
     {
       id: 3,
@@ -74,6 +89,11 @@ const OrdersTable = () => {
       },
       orderDetails: '250 Kg',
       status: 'Placed',
+      orders: [
+        { date: '14/01/2026', sku: 'SKU', kg: 100, scheme: 'Scheme' },
+        { date: '15/01/2026', sku: 'SKU-002', kg: 90, scheme: 'Scheme A' },
+        { date: '16/01/2026', sku: 'SKU-003', kg: 110, scheme: 'Scheme B' },
+      ],
     },
   ]
 
@@ -95,7 +115,8 @@ const OrdersTable = () => {
           </thead>
           <tbody>
             {ordersData.map((order) => (
-              <tr key={order.id}>
+              <React.Fragment key={order.id}>
+              <tr>
                 <td>
                   <div className="employee-cell">
                     <img
@@ -159,6 +180,47 @@ const OrdersTable = () => {
                   </button>
                 </td>
               </tr>
+              {expandedRows[order.id] && order.orders && order.orders.length > 0 && (
+                <tr className="orders-expanded-row">
+                  <td colSpan="5" className="orders-expanded-cell">
+                    <div className="orders-expanded-content">
+                      <div className="order-tabs">
+                        {order.orders.map((_, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            className={`order-tab ${(activeOrderTab[order.id] ?? 0) === idx ? 'active' : ''}`}
+                            onClick={() => setOrderTab(order.id, idx)}
+                          >
+                            Order {idx + 1}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="orders-detail-table-wrap">
+                        <table className="orders-detail-table">
+                          <thead>
+                            <tr>
+                              <th>DATE</th>
+                              <th>SKU</th>
+                              <th>KG</th>
+                              <th>SCHEME</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>{order.orders[activeOrderTab[order.id] ?? 0].date}</td>
+                              <td>{order.orders[activeOrderTab[order.id] ?? 0].sku}</td>
+                              <td className="kg-cell">{order.orders[activeOrderTab[order.id] ?? 0].kg}</td>
+                              <td>{order.orders[activeOrderTab[order.id] ?? 0].scheme}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              </React.Fragment>
             ))}
           </tbody>
         </table>

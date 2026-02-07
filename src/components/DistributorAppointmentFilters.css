@@ -1,0 +1,153 @@
+.distributor-appointment-filters-container {
+  background-color: white;
+  border-radius: 10px;
+  padding: 20px 24px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.da-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: nowrap;
+  margin-bottom: 16px;
+}
+
+.da-filters-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.da-filter-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.da-filter-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.da-filter-select {
+  padding: 8px 28px 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #2d3748;
+  background-color: white;
+  outline: none;
+  transition: border-color 0.2s;
+  min-width: 80px;
+  appearance: none;
+  padding-right: 40px;
+  background-image: url("/drop-down-icon.png");
+  background-repeat: no-repeat;
+  background-size: 24px 24px;
+  background-position: right 8px center;
+}
+
+.da-filter-select:focus {
+  border-color: #3b82f6;
+}
+
+.da-filters-center {
+  flex: 1;
+  min-width: 0;
+  max-width: 720px;
+  margin: 0 16px;
+}
+
+.da-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.da-search-wrapper .da-search-icon {
+  position: absolute;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.da-search-input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #2d3748;
+  background-color: white;
+  outline: none;
+  height: 36px;
+  box-sizing: border-box;
+}
+
+.da-search-input:focus {
+  border-color: #3b82f6;
+}
+
+.da-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.da-filters-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.da-add-button {
+  height: 36px;
+  padding: 0 20px;
+  background-color: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.da-add-button:hover {
+  background-color: #0a0a0a;
+}
+
+.da-add-icon {
+  font-size: 16px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.da-target-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+  padding-right: 0;
+}
+
+.da-target-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  background-color: #e5e7eb;
+  color: #4a5568;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}

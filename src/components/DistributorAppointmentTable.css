@@ -1,0 +1,133 @@
+.distributor-appointment-table-container {
+  margin-top: 0;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.distributor-appointment-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.distributor-appointment-table thead {
+  background-color: #f7fafc;
+}
+
+.distributor-appointment-table th {
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.da-th-new-town {
+  text-align: left;
+  padding-left: 20px;
+}
+
+.da-th-employee {
+  text-align: center;
+}
+
+.da-th-distributor {
+  text-align: center;
+}
+
+.da-th-actions {
+  text-align: right;
+  width: 80px;
+  padding-right: 20px;
+}
+
+.distributor-appointment-table td {
+  padding: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #1a202c;
+}
+
+.da-td-new-town {
+  text-align: left;
+  padding-left: 20px;
+  font-weight: 500;
+}
+
+.da-td-employee {
+  text-align: center;
+  color: #374151;
+}
+
+.da-td-distributor {
+  text-align: left;
+  padding-left: 20px;
+}
+
+.da-td-actions {
+  text-align: right;
+  padding-right: 20px;
+  vertical-align: middle;
+}
+
+.da-distributor-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.da-distributor-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.da-distributor-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.da-distributor-name {
+  font-weight: 600;
+  color: #1a202c;
+  font-size: 13px;
+}
+
+.da-distributor-location {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.da-action-menu-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a5568;
+  transition: color 0.2s;
+}
+
+.da-action-menu-btn:hover {
+  color: #1a202c;
+}
+
+.da-action-dots {
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: -2px;
+  line-height: 1;
+}

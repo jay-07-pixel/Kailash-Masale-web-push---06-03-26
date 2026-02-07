@@ -1,0 +1,116 @@
+.overview-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.overview-card {
+  background-color: white;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.overview-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.card-icon {
+  font-size: 20px;
+}
+
+.card-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+
+.card-icon-wrapper-blue {
+  background-color: #dbeafe;
+}
+
+.card-icon-wrapper-purple {
+  background-color: #ede9fe;
+}
+
+.card-icon-wrapper-orange {
+  background-color: #fed7aa;
+}
+
+.card-icon-wrapper-green {
+  background-color: #d1fae5;
+}
+
+.card-icon-image {
+  object-fit: contain;
+}
+
+.card-icon-total-empl {
+  width: 21px !important;
+  height: 21px !important;
+}
+
+.card-icon-active-orders {
+  width: 21px !important;
+  height: 21px !important;
+}
+
+.card-icon-pending-tasks {
+  width: 21px !important;
+  height: 21px !important;
+}
+
+.card-icon-checkin-out {
+  width: 21px !important;
+  height: 21px !important;
+}
+
+.card-change {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.card-change.positive {
+  color: #10b981;
+  background-color: #d1fae5;
+}
+
+.card-change.negative {
+  color: #ef4444;
+  background-color: #fee2e2;
+}
+
+.card-change.neutral {
+  color: #6b7280;
+  background-color: #f3f4f6;
+  font-size: 11px;
+}
+
+.card-title {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.card-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a202c;
+}

@@ -1,0 +1,148 @@
+.checkinout-table-container {
+  background-color: white;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.checkinout-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.checkinout-table thead {
+  background-color: #f7fafc;
+}
+
+.checkinout-table th {
+  padding: 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.checkinout-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #2d3748;
+}
+
+.date-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.day-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.date-text {
+  font-weight: 500;
+}
+
+.employee-name {
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.distributor-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.distributor-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.on-leave-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.primary-in {
+  font-weight: 500;
+}
+
+.work-time {
+  display: inline-block;
+  padding: 4px 8px;
+  background-color: #d1fae5;
+  color: #059669;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.notes-cell {
+  position: relative;
+  cursor: pointer;
+  max-width: 200px;
+}
+
+.notes-content {
+  padding: 8px;
+  background-color: #f3f4f6;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #4a5568;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 24px;
+}
+
+.notes-content.expanded {
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.notes-arrow-img {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  pointer-events: none;
+  transition: transform 0.2s;
+}
+
+.notes-arrow-img.expanded {
+  transform: translateY(-50%) rotate(180deg);
+}

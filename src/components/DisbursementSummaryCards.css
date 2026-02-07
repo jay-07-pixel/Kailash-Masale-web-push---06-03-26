@@ -1,0 +1,84 @@
+.disbursement-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.disbursement-summary-card {
+  min-width: 0;
+  height: 118px;
+  background-color: white;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+@media (max-width: 1400px) {
+  .disbursement-summary-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .disbursement-summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .disbursement-summary-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-color: #EFF6FF !important;
+}
+
+.card-icon {
+  font-size: 24px;
+}
+
+.card-icon-image {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.card-content-wrapper {
+  flex: 1;
+}
+
+.card-title {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.card-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 6px;
+}
+
+.card-trend {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.card-trend.positive {
+  color: #10b981;
+}

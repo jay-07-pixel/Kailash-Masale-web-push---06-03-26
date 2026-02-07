@@ -1,0 +1,125 @@
+.monthly-filters-container {
+  background-color: white;
+  border-radius: 10px;
+  padding: 20px 24px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.monthly-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: nowrap;
+  margin-bottom: 20px;
+}
+
+.monthly-filters-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.monthly-filter-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.monthly-filter-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.monthly-filter-select {
+  padding: 8px 28px 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #2d3748;
+  background-color: white;
+  outline: none;
+  transition: border-color 0.2s;
+  min-width: 80px;
+  appearance: none;
+  padding-right: 40px;
+  background-image: url("/drop-down-icon.png");
+  background-repeat: no-repeat;
+  background-size: 24px 24px;
+  background-position: right 8px center;
+}
+
+.monthly-filter-select:focus {
+  border-color: #3b82f6;
+}
+
+.monthly-filters-center {
+  flex: 1;
+  min-width: 0;
+  max-width: 720px;
+  margin: 0 16px;
+}
+
+.monthly-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.monthly-search-wrapper .monthly-search-icon {
+  position: absolute;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.monthly-search-input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #2d3748;
+  background-color: white;
+  outline: none;
+  height: 36px;
+  box-sizing: border-box;
+}
+
+.monthly-search-input:focus {
+  border-color: #3b82f6;
+}
+
+.monthly-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.monthly-filters-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.monthly-distributor-btn {
+  height: 36px;
+  padding: 0 20px;
+  background-color: #1e293b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.monthly-distributor-btn:hover {
+  background-color: #0f172a;
+}

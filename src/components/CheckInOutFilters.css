@@ -1,0 +1,125 @@
+.checkinout-filters {
+  width: 100%;
+  max-width: 100%;
+  background-color: white;
+  border: 1px solid #93c5fd;
+  border-radius: 10px;
+  padding: 20px 24px;
+  box-sizing: border-box;
+  margin-bottom: 24px;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  gap: 20px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+}
+
+.filter-group .filter-select {
+  min-width: 120px;
+}
+
+.filter-group.search-group {
+  flex: 1;
+  min-width: 220px;
+}
+
+.filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+  line-height: 1.2;
+  min-height: 14px;
+}
+
+.filter-label-spacer {
+  visibility: hidden;
+  user-select: none;
+}
+
+.filter-input,
+.filter-select {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #2d3748;
+  background-color: #f9fafb;
+  outline: none;
+  transition: border-color 0.2s;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.filter-select {
+  padding: 0 40px 0 12px;
+  min-width: 100px;
+  appearance: none;
+  background-image: url("/drop-down-icon.png");
+  background-repeat: no-repeat;
+  background-size: 24px 24px;
+  background-position: right 8px center;
+  cursor: pointer;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+  border-color: #3b82f6;
+  background-color: white;
+}
+
+.date-range-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 140px;
+}
+
+.date-range-input .filter-input {
+  width: 100%;
+}
+
+.calendar-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.date-range-input .filter-input {
+  padding-left: 36px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-input-wrapper .search-icon {
+  position: absolute;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.search-input-wrapper .search-input {
+  padding-left: 36px;
+  width: 100%;
+}

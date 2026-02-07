@@ -1,0 +1,268 @@
+.weekly-approvals-table-container {
+  margin-top: 20px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.weekly-approvals-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.weekly-approvals-table thead {
+  background-color: #f7fafc;
+}
+
+.weekly-approvals-table th {
+  padding: 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.weekly-approvals-table th:last-child {
+  width: 50px;
+  text-align: center;
+}
+
+.weekly-approvals-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #2d3748;
+}
+
+.weekly-approvals-table td:last-child {
+  text-align: center;
+}
+
+.employee-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.employee-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.employee-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.employee-name {
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.employee-role {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.expand-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expand-arrow {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  transition: transform 0.2s;
+}
+
+.expand-arrow.expanded {
+  transform: rotate(180deg);
+}
+
+/* Expanded Row Styles */
+.expanded-row-cell {
+  padding: 0 !important;
+  background-color: #f9fafb;
+}
+
+.expanded-content {
+  padding: 16px 20px;
+}
+
+.week-tabs-and-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.week-tabs {
+  display: flex;
+  gap: 0;
+  width: 1040px;
+  height: 36px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.week-tab {
+  flex: 1;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  border: none;
+  border-right: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.week-tab:last-child {
+  border-right: none;
+}
+
+.week-tab.active {
+  background-color: #d1d5db;
+  color: #1a202c;
+  font-weight: 700;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.action-btn:hover {
+  opacity: 0.8;
+}
+
+.action-btn.approve {
+  background-color: #10b981;
+  color: white;
+}
+
+.action-btn.reject {
+  background-color: #ef4444;
+  color: white;
+}
+
+.action-btn.info,
+.action-btn.action-btn-pen {
+  background-color: #9ca3af;
+  color: white;
+  padding: 0;
+}
+
+.action-btn-pen .pen-icon-img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+/* Detail Table Styles */
+.detail-table-wrapper {
+  overflow-x: auto;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.detail-table thead {
+  background-color: white;
+}
+
+.detail-table th {
+  padding: 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #2d3748;
+}
+
+.detail-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.detail-table .distributor-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.distributor-initials-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.distributor-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.distributor-name {
+  font-weight: 500;
+  color: #1a202c;
+  font-size: 15px;
+}
+
+.distributor-location {
+  font-size: 13px;
+  color: #6b7280;
+}

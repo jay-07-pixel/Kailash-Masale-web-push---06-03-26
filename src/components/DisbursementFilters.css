@@ -1,0 +1,131 @@
+.disbursement-filters-container {
+  background-color: white;
+  border-radius: 10px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.disb-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: nowrap;
+}
+
+.disb-filters-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.disb-filter-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.disb-filter-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.disb-filter-select {
+  padding: 8px 28px 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #2d3748;
+  background-color: white;
+  outline: none;
+  transition: border-color 0.2s;
+  min-width: 80px;
+  appearance: none;
+  padding-right: 40px;
+  background-image: url("/drop-down-icon.png");
+  background-repeat: no-repeat;
+  background-size: 24px 24px;
+  background-position: right 8px center;
+}
+
+.disb-filter-select:focus {
+  border-color: #3b82f6;
+}
+
+.disb-filters-center {
+  flex: 1;
+  min-width: 0;
+  margin: 0 8px;
+}
+
+.disb-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.disb-search-wrapper .disb-search-icon {
+  position: absolute;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.disb-search-input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #2d3748;
+  background-color: white;
+  outline: none;
+  height: 40px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.disb-search-input:focus {
+  border-color: #3b82f6;
+}
+
+.disb-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.disb-filters-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.disb-edit-button {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.disb-edit-button:hover {
+  background-color: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.disb-edit-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}

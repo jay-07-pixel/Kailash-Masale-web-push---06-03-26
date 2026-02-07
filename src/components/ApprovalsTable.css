@@ -1,0 +1,141 @@
+.approvals-cards-container {
+  padding: 0;
+}
+
+.approvals-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.approval-card {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.approval-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 16px 12px;
+}
+
+.approval-card-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: #9ca3af;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.approval-card-user {
+  flex: 1;
+  min-width: 0;
+}
+
+.approval-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 2px;
+}
+
+.approval-card-role {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.approval-card-date {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.approval-card-divider {
+  height: 1px;
+  background-color: #e5e7eb;
+  margin: 0 16px;
+}
+
+.approval-card-body {
+  padding: 14px 16px;
+  flex: 1;
+  min-height: 120px;
+}
+
+.approval-card-subject {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 8px;
+}
+
+.approval-card-reason {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0;
+  word-break: break-word;
+}
+
+.approval-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  padding: 0;
+}
+
+.approval-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  color: white;
+  transition: opacity 0.2s;
+}
+
+.approval-btn:hover {
+  opacity: 0.9;
+}
+
+.reject-btn {
+  background-color: #dc2626;
+}
+
+.approve-btn {
+  background-color: #16a34a;
+}
+
+.approval-btn-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+@media (max-width: 1200px) {
+  .approvals-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .approvals-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}

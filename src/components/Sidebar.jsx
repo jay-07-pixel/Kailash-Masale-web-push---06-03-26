@@ -6,13 +6,24 @@ const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation()
   const [approvalsExpanded, setApprovalsExpanded] = useState(true)
   const [monthlyExpanded, setMonthlyExpanded] = useState(true)
-  
+  const [myTeamExpanded, setMyTeamExpanded] = useState(true)
+
   const navItems = [
     { icon: '📊', label: 'Dashboard', path: '/' },
     { icon: '⏰', label: 'Check In / Out', path: '/check-in-out' },
     { icon: '📦', label: 'Orders', path: '/orders' },
     { icon: '📋', label: 'Pending Task', path: '/pending-task' },
     { icon: '✅', label: 'Weekly Approvals', path: '/weekly-approvals' },
+    {
+      icon: '👥',
+      label: 'My Team',
+      path: '/my-team',
+      hasSubmenu: true,
+      submenu: [
+        { label: 'Team Members', path: '/my-team' },
+        { label: 'Master Sheet', path: '/my-team/master-sheet' },
+      ]
+    },
     { icon: '🏢', label: 'Distributor', path: '/distributor' },
     { icon: '📈', label: 'Reports', path: '/reports' },
     { icon: '💰', label: 'Disbursement', path: '/disbursement' },
@@ -41,7 +52,13 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const getPageTitle = () => {
     const currentItem = navItems.find(item => item.path === location.pathname)
-    return currentItem ? currentItem.label.toLowerCase() : 'dashboard'
+    if (currentItem) return currentItem.label.toLowerCase()
+    const parentWithSub = navItems.find(item => item.submenu?.some(s => s.path === location.pathname))
+    if (parentWithSub) {
+      const sub = parentWithSub.submenu.find(s => s.path === location.pathname)
+      return sub ? sub.label.toLowerCase() : parentWithSub.label.toLowerCase()
+    }
+    return 'dashboard'
   }
 
   return (
@@ -82,9 +99,11 @@ const Sidebar = ({ isOpen, onClose }) => {
           if (item.hasSubmenu) {
             const isSubmenuActive = item.submenu.some(subItem => location.pathname === subItem.path)
             const isParentActive = isActive || isSubmenuActive
-            const isExpanded = item.label === 'Monthly' ? monthlyExpanded : approvalsExpanded
-            const toggleExpanded = item.label === 'Monthly' 
+            const isExpanded = item.label === 'Monthly' ? monthlyExpanded : item.label === 'My Team' ? myTeamExpanded : approvalsExpanded
+            const toggleExpanded = item.label === 'Monthly'
               ? () => setMonthlyExpanded(!monthlyExpanded)
+              : item.label === 'My Team'
+              ? () => setMyTeamExpanded(!myTeamExpanded)
               : () => setApprovalsExpanded(!approvalsExpanded)
             
             return (

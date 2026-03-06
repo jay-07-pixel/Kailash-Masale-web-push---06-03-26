@@ -26,6 +26,17 @@ A modern React.js dashboard UI built with Vite for Kailash Masale business manag
 npm install
 ```
 
+### Environment variables
+
+Create a `.env` file from the example (never commit `.env`):
+
+```bash
+cp .env.example .env
+```
+
+Fill in your Firebase values from [Firebase Console](https://console.firebase.google.com) → Project settings → Your apps.  
+For **deploy** (Vercel, Netlify, etc.), set the same variables in the host’s dashboard — do not put real keys in the repo.
+
 ### Development
 
 Run the development server:

@@ -9,9 +9,12 @@ node_modules
 /dist
 *.local
 
-# Environment & secrets
+# Environment & secrets (never commit real keys)
 .env
-.env.*
+.env.local
+.env.development
+.env.production
+.env.*.local
 !.env.example
 
 # Logs

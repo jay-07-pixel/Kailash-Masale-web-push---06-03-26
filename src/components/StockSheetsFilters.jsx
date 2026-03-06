@@ -2,9 +2,14 @@ import React, { useState } from 'react'
 import StockSheetsTable from './StockSheetsTable'
 import './StockSheetsFilters.css'
 
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+const getCurrentYear = () => String(new Date().getFullYear())
+const getCurrentMonth = () => MONTH_NAMES[new Date().getMonth()]
+
 const StockSheetsFilters = () => {
-  const [year, setYear] = useState('2026')
-  const [month, setMonth] = useState('Jan')
+  const [year, setYear] = useState(getCurrentYear)
+  const [month, setMonth] = useState(getCurrentMonth)
   const [searchQuery, setSearchQuery] = useState('')
 
   return (
@@ -17,9 +22,10 @@ const StockSheetsFilters = () => {
             onChange={(e) => setYear(e.target.value)}
             className="filter-select"
           >
-            <option value="2026">2026</option>
-            <option value="2025">2025</option>
-            <option value="2024">2024</option>
+            {[0, 1, 2, 3].map((i) => {
+              const y = new Date().getFullYear() - i
+              return <option key={y} value={String(y)}>{y}</option>
+            })}
           </select>
         </div>
 
@@ -63,7 +69,7 @@ const StockSheetsFilters = () => {
         </div>
       </div>
       
-      <StockSheetsTable />
+      <StockSheetsTable year={year} month={month} searchQuery={searchQuery} />
     </div>
   )
 }

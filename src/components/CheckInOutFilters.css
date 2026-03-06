@@ -81,26 +81,36 @@
   background-color: white;
 }
 
-.date-range-input {
-  position: relative;
-  display: flex;
-  align-items: center;
-  min-width: 140px;
+.filter-group-date {
+  min-width: 160px;
 }
 
-.date-range-input .filter-input {
+.date-picker-wrap {
+  display: block;
+  height: 36px;
+}
+
+.date-picker-input {
   width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #2d3748;
+  background-color: #f9fafb;
+  box-sizing: border-box;
 }
 
-.calendar-icon {
-  position: absolute;
-  left: 12px;
-  font-size: 14px;
-  pointer-events: none;
+.date-picker-input:focus {
+  border-color: #3b82f6;
+  background-color: white;
+  outline: none;
 }
 
-.date-range-input .filter-input {
-  padding-left: 36px;
+.date-picker-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
 }
 
 .search-input-wrapper {

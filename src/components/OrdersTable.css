@@ -4,6 +4,13 @@
   overflow: hidden;
 }
 
+.orders-table-empty {
+  text-align: center;
+  padding: 32px 16px !important;
+  color: #6b7280;
+  font-size: 14px;
+}
+
 .orders-card .orders-table-container {
   padding: 0 24px 24px;
 }
@@ -26,9 +33,9 @@
 }
 
 .orders-table th {
-  padding: 12px 8px;
+  padding: 12px 10px;
   text-align: left;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: #4a5568;
   text-transform: uppercase;
@@ -36,9 +43,13 @@
   border-bottom: 2px solid #e2e8f0;
   white-space: normal;
   word-wrap: break-word;
+  vertical-align: middle;
 }
 
-.orders-table th:nth-child(3) {
+.orders-table th:nth-child(3),
+.orders-table th:nth-child(4),
+.orders-table th:nth-child(5),
+.orders-table th:nth-child(6) {
   text-align: center;
 }
 
@@ -58,13 +69,14 @@
 }
 
 .orders-table td {
-  padding: 12px 8px;
+  padding: 12px 10px;
   border-bottom: 1px solid #e2e8f0;
   font-size: 13px;
   color: #2d3748;
   white-space: normal;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  vertical-align: middle;
 }
 
 .employee-cell {
@@ -135,6 +147,13 @@
   font-weight: 500;
   color: #1a202c;
   text-align: center;
+}
+
+.status-count {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: #374151;
 }
 
 .status-badge {
@@ -226,21 +245,30 @@
   max-width: 100%;
 }
 
+.order-tabs-with-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  max-width: 100%;
+}
+
 .order-tabs {
   display: flex;
   gap: 0;
-  width: 100%;
-  max-width: 1040px;
+  flex: 0 1 auto;
+  min-width: 0;
   height: 36px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   overflow: hidden;
-  margin-bottom: 16px;
 }
 
 .order-tab {
   flex: 1;
-  padding: 0;
+  min-width: 72px;
+  padding: 0 12px;
   height: 100%;
   display: flex;
   align-items: center;
@@ -266,6 +294,205 @@
   background-color: #d1d5db;
   color: #1a202c;
   font-weight: 700;
+}
+
+.order-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.order-action-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.order-action-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.order-action-placed {
+  background-color: #059669;
+  color: #fff;
+}
+
+.order-action-placed:hover {
+  background-color: #047857;
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.3);
+}
+
+.order-action-decline {
+  background-color: #fff;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.order-action-decline:hover {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.order-current-status {
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.order-status-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.order-status-badge.order-status-placed {
+  background-color: #d1fae5;
+  color: #047857;
+}
+
+.order-status-badge.order-status-declined {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.order-status-badge.order-status-pending {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.order-decline-reason-display {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background-color: #f3f4f6;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.order-decline-reason-display strong {
+  margin-right: 6px;
+}
+
+.order-decline-reasons {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.order-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.order-row-actions .order-action-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* Decline reason modal */
+.order-decline-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.order-decline-modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  max-width: 420px;
+  width: 100%;
+  padding: 24px;
+}
+
+.order-decline-modal-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.order-decline-modal-desc {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.order-decline-modal-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+
+.order-decline-modal-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.order-decline-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.order-decline-modal-cancel {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.order-decline-modal-cancel:hover {
+  background: #e5e7eb;
+}
+
+.order-decline-modal-submit {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.order-decline-modal-submit:hover {
+  background: #b91c1c;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.35);
 }
 
 .orders-detail-table-wrap {
@@ -296,10 +523,17 @@
   color: #4a5568;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  vertical-align: middle;
 }
 
+/* Align headers: DATE(1), SKU(2) left; KG(3) right; SCHEME(4), DISTRIBUTOR(5) center */
 .orders-detail-table th:nth-child(3) {
   text-align: right;
+}
+
+.orders-detail-table th:nth-child(4),
+.orders-detail-table th:nth-child(5) {
+  text-align: center;
 }
 
 .orders-detail-table td {
@@ -308,10 +542,25 @@
   color: #2d3748;
   border-bottom: 1px solid #e2e8f0;
   text-align: left;
+  vertical-align: middle;
+}
+
+/* Match cell alignment to headers */
+.orders-detail-table td:nth-child(1),
+.orders-detail-table td:nth-child(2) {
+  text-align: left;
+}
+
+.orders-detail-table td:nth-child(3) {
+  text-align: right;
+}
+
+.orders-detail-table td:nth-child(4),
+.orders-detail-table td:nth-child(5) {
+  text-align: center;
 }
 
 .orders-detail-table td.kg-cell {
-  text-align: right;
   font-weight: 500;
 }
 

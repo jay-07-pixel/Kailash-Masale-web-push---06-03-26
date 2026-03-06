@@ -1,0 +1,168 @@
+.aec-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.aec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+  gap: 20px;
+}
+
+/* ── Employee Card ── */
+.aec-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+.aec-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.aec-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.aec-emp-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.aec-emp-role {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* ── Distributor rows ── */
+.aec-dist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.aec-dist-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aec-dist-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aec-dist-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.aec-dist-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* ── 4-week boxes ── */
+.aec-weeks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.aec-week-box {
+  border-radius: 10px;
+  padding: 10px 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aec-week-box.has-data {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.aec-week-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.aec-week-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.aec-week-tag {
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 1px 4px;
+  flex-shrink: 0;
+}
+
+.primary-tag {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.secondary-tag {
+  background: #fce7f3;
+  color: #be185d;
+}
+
+.working-days-tag {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.aec-week-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.aec-no-dist {
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: center;
+  padding: 10px 0;
+}
+
+/* divider between distributor rows */
+.aec-dist-row + .aec-dist-row {
+  padding-top: 14px;
+  border-top: 1px dashed #e5e7eb;
+}

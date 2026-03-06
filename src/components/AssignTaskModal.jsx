@@ -1,27 +1,41 @@
 import React, { useState } from 'react'
 import './AssignTaskModal.css'
 
-const AssignTaskModal = ({ isOpen, onClose }) => {
+const AssignTaskModal = ({ isOpen, onClose, employees = [], onSave, onSubmit }) => {
   const [selectedEmployee, setSelectedEmployee] = useState('')
   const [pendingTask, setPendingTask] = useState('')
 
+  const resetForm = () => {
+    setSelectedEmployee('')
+    setPendingTask('')
+  }
+
   const handleSave = () => {
-    // Handle save logic here
-    onClose()
+    if (!selectedEmployee || !pendingTask.trim()) return
+    if (onSave) onSave(selectedEmployee, pendingTask.trim(), 'pending')
+    else onClose()
+    resetForm()
   }
 
   const handleSubmit = () => {
-    // Handle submit logic here
+    if (!selectedEmployee || !pendingTask.trim()) return
+    if (onSubmit) onSubmit(selectedEmployee, pendingTask.trim(), 'pending')
+    else onClose()
+    resetForm()
+  }
+
+  const handleClose = () => {
+    resetForm()
     onClose()
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="assign-task-overlay" onClick={onClose}>
+    <div className="assign-task-overlay" onClick={handleClose}>
       <div className="assign-task-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <button className="back-button" onClick={onClose}>
+          <button className="back-button" onClick={handleClose}>
             <span className="back-arrow">←</span>
           </button>
         </div>
@@ -36,10 +50,11 @@ const AssignTaskModal = ({ isOpen, onClose }) => {
                 className="employee-select"
               >
                 <option value="">Select employee</option>
-                <option value="employee1">John Doe</option>
-                <option value="employee2">Jane Smith</option>
-                <option value="employee3">Mike Johnson</option>
-                <option value="employee4">Sarah Williams</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.salesPersonName || emp.email || emp.id}
+                  </option>
+                ))}
               </select>
               <img src="/drop-down-icon.png" alt="" className="drop-down-icon-img" />
             </div>
@@ -58,10 +73,10 @@ const AssignTaskModal = ({ isOpen, onClose }) => {
         </div>
 
         <div className="modal-footer">
-          <button className="save-button" onClick={handleSave}>
+          <button className="save-button" onClick={handleSave} disabled={!selectedEmployee || !pendingTask.trim()}>
             Save
           </button>
-          <button className="submit-button" onClick={handleSubmit}>
+          <button className="submit-button" onClick={handleSubmit} disabled={!selectedEmployee || !pendingTask.trim()}>
             Submit
           </button>
         </div>

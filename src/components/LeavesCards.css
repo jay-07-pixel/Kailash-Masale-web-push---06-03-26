@@ -121,10 +121,50 @@
   opacity: 0.9;
 }
 
+.reject-button:disabled,
+.approve-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .check-icon,
 .x-icon {
   font-size: 14px;
   font-weight: 700;
+}
+
+.leave-status-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+.leave-status-approved {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.leave-status-rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.leaves-empty {
+  grid-column: 1 / -1;
+  padding: 40px 20px;
+  text-align: center;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+}
+
+.leaves-empty-text {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
 }
 
 @media (max-width: 1600px) {

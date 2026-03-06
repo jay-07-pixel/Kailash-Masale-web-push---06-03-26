@@ -9,24 +9,20 @@ const Sidebar = ({ isOpen, onClose }) => {
   const [myTeamExpanded, setMyTeamExpanded] = useState(true)
 
   const navItems = [
-    { icon: '📊', label: 'Dashboard', path: '/' },
-    { icon: '⏰', label: 'Check In / Out', path: '/check-in-out' },
-    { icon: '📦', label: 'Orders', path: '/orders' },
-    { icon: '📋', label: 'Pending Task', path: '/pending-task' },
-    { icon: '✅', label: 'Weekly Approvals', path: '/weekly-approvals' },
+    { icon: '📊', label: 'DASHBOARD', path: '/' },
     {
       icon: '👥',
-      label: 'My Team',
+      label: 'MY TEAM',
       path: '/my-team',
       hasSubmenu: true,
       submenu: [
         { label: 'Team Members', path: '/my-team' },
-        { label: 'Master Sheet', path: '/my-team/master-sheet' },
+        { label: 'Create Location', path: '/my-team/create-location' },
       ]
     },
-    { icon: '🏢', label: 'Distributor', path: '/distributor' },
-    { icon: '📈', label: 'Reports', path: '/reports' },
-    { icon: '💰', label: 'Disbursement', path: '/disbursement' },
+    { icon: '⏰', label: 'CHECKIN/OUT', path: '/check-in-out' },
+    { icon: '📦', label: 'ORDERS', path: '/orders' },
+    { icon: '📋', label: 'PENDING TASK', path: '/pending-task' },
     { 
       icon: '📅', 
       label: 'Monthly', 
@@ -34,10 +30,11 @@ const Sidebar = ({ isOpen, onClose }) => {
       hasSubmenu: true,
       submenu: [
         { label: 'Employee Record', path: '/monthly' },
-        { label: 'Distributor Appointment', path: '/monthly/distributor-appointment' },
         { label: 'Stock Sheets', path: '/monthly/stock-sheets' },
       ]
     },
+    { icon: '✅', label: 'WEEKLY APPROVAL', path: '/weekly-approvals' },
+    { icon: '🏢', label: 'DISTRIBUTOR', path: '/distributor' },
     { 
       icon: '✓', 
       label: 'Approvals', 
@@ -48,6 +45,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         { label: 'Sunday approval', path: '/approvals' },
       ]
     },
+    { icon: '💰', label: 'Disburment', path: '/disbursement' },
+    { icon: '📈', label: 'report', path: '/reports' },
   ]
 
   const getPageTitle = () => {
@@ -82,16 +81,17 @@ const Sidebar = ({ isOpen, onClose }) => {
         {navItems.map((item, index) => {
           const isActive = location.pathname === item.path
           const getIconSrc = () => {
-            if (item.label === 'Dashboard') return '/dashboard-icon.png'
-            if (item.label === 'Check In / Out') return '/check-in-out-icon.png'
-            if (item.label === 'Orders') return '/orders-icon.png'
-            if (item.label === 'Pending Task') return '/pending-task-icon.png'
-            if (item.label === 'Weekly Approvals') return '/weekly-approvals-icon.png'
-            if (item.label === 'Monthly') return '/monthly-icon.png'
-            if (item.label === 'Distributor') return '/distributor-icon.png'
-            if (item.label === 'Approvals') return '/approvals-icon.png'
-            if (item.label === 'Reports') return '/reports-icon.png'
-            if (item.label === 'Disbursement') return '/dollar-icon.png'
+            if (item.path === '/') return '/dashboard-icon.png'
+            if (item.path === '/check-in-out') return '/check-in-out-icon.png'
+            if (item.path === '/orders') return '/orders-icon.png'
+            if (item.path === '/pending-task') return '/pending-task-icon.png'
+            if (item.path === '/weekly-approvals') return '/weekly-approvals-icon.png'
+            if (item.path === '/monthly') return '/monthly-icon.png'
+            if (item.path === '/distributor') return '/distributor-icon.png'
+            if (item.path === '/approvals') return '/approvals-icon.png'
+            if (item.path === '/reports') return '/reports-icon.png'
+            if (item.path === '/disbursement') return '/dollar-icon.png'
+            if (item.path === '/my-team') return null
             return null
           }
           const iconSrc = getIconSrc()
@@ -99,10 +99,10 @@ const Sidebar = ({ isOpen, onClose }) => {
           if (item.hasSubmenu) {
             const isSubmenuActive = item.submenu.some(subItem => location.pathname === subItem.path)
             const isParentActive = isActive || isSubmenuActive
-            const isExpanded = item.label === 'Monthly' ? monthlyExpanded : item.label === 'My Team' ? myTeamExpanded : approvalsExpanded
-            const toggleExpanded = item.label === 'Monthly'
+            const isExpanded = item.path === '/monthly' ? monthlyExpanded : item.path === '/my-team' ? myTeamExpanded : approvalsExpanded
+            const toggleExpanded = item.path === '/monthly'
               ? () => setMonthlyExpanded(!monthlyExpanded)
-              : item.label === 'My Team'
+              : item.path === '/my-team'
               ? () => setMyTeamExpanded(!myTeamExpanded)
               : () => setApprovalsExpanded(!approvalsExpanded)
             
@@ -169,11 +169,11 @@ const Sidebar = ({ isOpen, onClose }) => {
       <div className="sidebar-footer">
         <div className="user-info">
           <div className="user-avatar">
-            <img src="https://ui-avatars.com/api/?name=Alex+Morgan&background=4a90e2&color=fff" alt="Alex Morgan" />
+            <img src="https://ui-avatars.com/api/?name=Shlok+Thakral&background=4a90e2&color=fff" alt="Shlok Thakral" />
           </div>
           <div className="user-details">
-            <div className="user-name">Alex Morgan</div>
-            <div className="user-role">Regional Manager</div>
+            <div className="user-name">Shlok Thakral</div>
+            <div className="user-role">Kailash Masale</div>
           </div>
         </div>
       </div>

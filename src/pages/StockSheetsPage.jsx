@@ -6,7 +6,7 @@ import './StockSheetsPage.css'
 function StockSheetsPage() {
   return (
     <div className="main-content">
-      <UniversalHeader title="Monthly" />
+      <UniversalHeader title="Stock Sheets" />
       <div className="content-wrapper">
         <StockSheetsFilters />
       </div>

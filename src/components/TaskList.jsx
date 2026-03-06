@@ -1,67 +1,55 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import TaskCard from './TaskCard'
 import './TaskList.css'
 
-const TaskList = ({ activeTab, searchQuery }) => {
-  const allTasks = [
-    {
-      id: 1,
-      name: 'Sarah Jenkins',
-      role: 'Senior Developer',
-      task: 'Update the authentication API to support OAuth 2.0. Needs to be tested with the mobile team before deployment.',
-      status: 'pending',
-      dueDate: 'Due: Oct 24, 2023',
-      avatar: 'https://ui-avatars.com/api/?name=Sarah+Jenkins&background=f59e0b&color=fff',
-    },
-    {
-      id: 2,
-      name: 'Michael Ross',
-      role: 'UX Designer',
-      task: 'Create high-fidelity wireframes for the new dashboard analytics view. Focus on the mobile responsiveness.',
-      status: 'ongoing',
-      dueDate: 'Due: Oct 25, 2023',
-      avatar: 'https://ui-avatars.com/api/?name=Michael+Ross&background=3b82f6&color=fff',
-    },
-    {
-      id: 3,
-      name: 'Emily Chen',
-      role: 'Marketing Lead',
-      task: 'Finalize the Q4 social media strategy document and distribute to the content team for review.',
-      status: 'pending',
-      dueDate: 'Due: Oct 28, 2023',
-      avatar: 'https://ui-avatars.com/api/?name=Emily+Chen&background=f59e0b&color=fff',
-    },
-    {
-      id: 4,
-      name: 'David Kim',
-      role: 'Product Manager',
-      task: 'Review competitor analysis report and highlight key differentiators.',
-      status: 'resolved',
-      completedDate: 'Completed',
-      avatar: 'https://ui-avatars.com/api/?name=David+Kim&background=10b981&color=fff',
-    },
-    {
-      id: 5,
-      name: 'John Mitchell',
-      role: 'Sales Executive',
-      task: 'Follow up with Green Valley Supplies regarding pending order confirmation.',
-      status: 'pending',
-      dueDate: 'Due: Dec 5, 2023',
-      avatar: 'https://ui-avatars.com/api/?name=John+Mitchell&background=f59e0b&color=fff',
-    },
-    {
-      id: 6,
-      name: 'Lisa Anderson',
-      role: 'Operations Manager',
-      task: 'Warehouse inventory audit pending approval from regional manager.',
-      status: 'ongoing',
-      dueDate: 'Due: Dec 8, 2023',
-      avatar: 'https://ui-avatars.com/api/?name=Lisa+Anderson&background=3b82f6&color=fff',
-    },
-  ]
+function toMs(v) {
+  if (!v) return 0
+  if (typeof v.toDate === 'function') return v.toDate().getTime()
+  const d = new Date(v)
+  return isNaN(d.getTime()) ? 0 : d.getTime()
+}
+
+const TaskList = ({ activeTab, searchQuery, tasks = [], employees = [], onMarkComplete, onEdit, onDelete }) => {
+  const allTasks = useMemo(() => {
+    return tasks.map((t) => {
+      const emp = employees.find((e) => e.id === t.employeeId)
+      const name = emp ? (emp.salesPersonName || emp.email || t.employeeId) : t.employeeId || '—'
+      const role = emp?.designation || '—'
+      const createdMs  = toMs(t.createdAt)
+      const resolvedMs = toMs(t.resolvedAt)
+      const createdAt  = createdMs ? new Date(createdMs) : null
+      const dueDateStr = createdAt
+        ? `Since: ${createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+        : '—'
+      const resolvedAt = resolvedMs ? new Date(resolvedMs) : null
+      const completedStr = resolvedAt
+        ? `Resolved: ${resolvedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+        : t.status === 'resolved' ? 'Completed' : null
+      return {
+        id: t.id,
+        name,
+        role,
+        task: t.description || '—',
+        status: t.status || 'pending',
+        dueDate: dueDateStr,
+        completedDate: completedStr,
+        createdMs,
+        resolvedMs,
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name.replace(/\s+/g, '+'))}&background=f59e0b&color=fff`,
+      }
+    })
+  }, [tasks, employees])
 
   // Filter tasks based on active tab
   let filteredTasks = allTasks.filter((task) => task.status === activeTab)
+
+  // Sort: ongoing → oldest createdAt first (longest ongoing at top)
+  //       resolved → newest resolvedAt first (latest resolved at top)
+  if (activeTab === 'pending' || activeTab === 'ongoing') {
+    filteredTasks = [...filteredTasks].sort((a, b) => a.createdMs - b.createdMs)
+  } else if (activeTab === 'resolved') {
+    filteredTasks = [...filteredTasks].sort((a, b) => b.resolvedMs - a.resolvedMs)
+  }
 
   // Filter by search query
   if (searchQuery) {
@@ -76,7 +64,15 @@ const TaskList = ({ activeTab, searchQuery }) => {
   return (
     <div className="task-list">
       {filteredTasks.length > 0 ? (
-        filteredTasks.map((task) => <TaskCard key={task.id} task={task} />)
+        filteredTasks.map((task) => (
+          <TaskCard
+            key={task.id}
+            task={task}
+            onMarkComplete={onMarkComplete}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        ))
       ) : (
         <div className="no-tasks">No tasks found</div>
       )}

@@ -1,44 +1,40 @@
 import React from 'react'
 import './CheckInOutSummaryCards.css'
 
-const CheckInOutSummaryCards = () => {
+const CheckInOutSummaryCards = ({ summary = {} }) => {
   const cards = [
     {
       title: 'Total Visits',
-      value: '1,284',
-      trend: '↑ 12% vs last week',
-      trendType: 'positive',
+      value: summary.totalVisits ?? '0',
+      description: 'From check-ins',
       iconSrc: '/lov-icon.png',
       iconBg: '#dbeafe',
     },
     {
       title: 'Productive Calls',
-      value: '856',
-      trend: '↑ 8% vs last week',
-      trendType: 'positive',
+      value: summary.productiveCalls ?? '0',
+      description: 'Total productive',
       iconSrc: '/call-icon.png',
       iconBg: '#dcfce7',
     },
     {
       title: 'Avg Working Hours',
-      value: '8.5h',
+      value: summary.avgWorkingHours ?? '0h',
       description: 'Daily Average',
       iconSrc: '/purple-clock.png',
       iconBg: '#ede9fe',
     },
     {
       title: 'Total Primary Sales',
-      value: '4,250 kg',
-      trend: '↑ 5% vs last week',
-      trendType: 'positive',
+      value: summary.totalPrimarySales ?? '0 kg',
+      description: 'From records',
       iconSrc: '/orange-bag.png',
       iconBg: '#ffedd5',
     },
     {
       title: 'Total Secondary Sales',
-      value: '4,250 kg',
-      trend: '↑ 5% vs last week',
-      trendType: 'positive',
+      value: summary.totalSecondarySales ?? '0 kg',
+      description: 'From records',
       iconSrc: '/orange-bag.png',
       iconBg: '#ffedd5',
     },
@@ -61,13 +57,7 @@ const CheckInOutSummaryCards = () => {
           <div className="card-content-wrapper">
             <div className="card-title">{card.title}</div>
             <div className="card-value">{card.value}</div>
-            {card.trend ? (
-              <div className={`card-trend ${card.trendType}`}>
-                {card.trend}
-              </div>
-            ) : (
-              <div className="card-description">{card.description}</div>
-            )}
+            <div className="card-description">{card.description}</div>
           </div>
         </div>
       ))}

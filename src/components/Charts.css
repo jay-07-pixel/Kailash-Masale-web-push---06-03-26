@@ -12,11 +12,36 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.chart-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
 .chart-title {
   font-size: 14px;
   font-weight: 600;
   color: #1a202c;
-  margin-bottom: 12px;
+  margin-bottom: 0;
+}
+
+.chart-month-select {
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #374151;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.chart-month-select:hover,
+.chart-month-select:focus {
+  border-color: #3b82f6;
 }
 
 .pie-chart-container {

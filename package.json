@@ -6,12 +6,23 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed-distributors": "node scripts/seed-distributors.js",
+    "seed-employees": "node scripts/seed-employees.js",
+    "seed-skus": "node scripts/seed-skus.js",
+    "seed-locations": "node scripts/seed-locations.js",
+    "seed-locations-final": "node scripts/seed-locations-final.js",
+    "assign-distributors-sharad": "node scripts/assign-distributors-to-employee.js",
+    "assign-distributors-gajanan": "node scripts/assign-distributors-to-gajanan.js",
+    "assign-distributors-sagar-harde": "node scripts/assign-distributors-to-sagar-harde.js",
+    "assign-distributors-taufiq-ali": "node scripts/assign-distributors-to-taufiq-ali.js",
+    "assign-distributors-yogesh-bavistale": "node scripts/assign-distributors-to-yogesh-bavistale.js"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.1.2",
     "typescript": "~5.9.3",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "xlsx": "^0.18.5"
   },
   "dependencies": {
     "firebase": "^12.9.0",

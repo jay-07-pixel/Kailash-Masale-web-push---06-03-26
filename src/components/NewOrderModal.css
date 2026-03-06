@@ -17,8 +17,8 @@
   background-color: white;
   border-radius: 12px;
   width: 100%;
-  max-width: 1223px;
-  max-height: 718px;
+  max-width: 520px;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
@@ -30,7 +30,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 24px 32px;
+  padding: 16px 20px;
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -51,7 +51,7 @@
 }
 
 .modal-title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   color: #1a202c;
   margin: 0;
@@ -59,7 +59,7 @@
 
 .modal-body {
   flex: 1;
-  padding: 32px;
+  padding: 20px;
   overflow-y: auto;
 }
 
@@ -73,6 +73,25 @@
   font-weight: 500;
   color: #2d3748;
   margin-bottom: 8px;
+}
+
+.assigned-employees-display {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background-color: #f0f9ff;
+  border-radius: 8px;
+  border: 1px solid #bae6fd;
+  font-size: 14px;
+}
+
+.assigned-employees-label {
+  font-weight: 500;
+  color: #0369a1;
+  margin-right: 6px;
+}
+
+.assigned-employees-value {
+  color: #0c4a6e;
 }
 
 .select-wrapper {
@@ -138,18 +157,18 @@
 }
 
 .add-item-button {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  width: 184px;
-  height: 42px;
-  padding: 0;
+  gap: 4px;
+  min-width: 72px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
   background-color: #9CA3AF;
   color: #000000;
   border: none;
-  border-radius: 10px;
-  font-size: 14px;
+  border-radius: 6px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -160,57 +179,59 @@
 }
 
 .add-icon {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 600;
   color: #000000;
 }
 
 .item-details-inline {
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
+  align-items: flex-end;
+  gap: 8px;
   flex: 1;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .item-field-display {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   flex: 1;
-  min-width: 140px;
+  min-width: 0;
+  max-width: 120px;
 }
 
 .field-label-small {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
   color: #2d3748;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
 .field-value {
-  font-size: 14px;
+  font-size: 12px;
   color: #2d3748;
-  padding: 10px 12px;
+  padding: 6px 8px;
   background-color: white;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  min-height: 40px;
+  border-radius: 6px;
+  min-height: 30px;
   display: flex;
   align-items: center;
 }
 
 .remove-item-button {
-  padding: 10px 16px;
+  padding: 6px 10px;
   background-color: white;
   color: #dc2626;
   border: 1px solid #fee2e2;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .remove-item-button:hover {
@@ -218,24 +239,35 @@
   border-color: #fecaca;
 }
 
+.new-order-submit-error {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
 .modal-footer {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 12px;
-  padding: 24px 32px;
+  padding: 16px 20px;
   border-top: 1px solid #e2e8f0;
 }
 
 .save-button {
-  width: 371px;
-  height: 54px;
-  padding: 0;
+  min-width: 100px;
+  width: auto;
+  height: 40px;
+  padding: 0 20px;
   background-color: white;
   color: #2d3748;
   border: 1px solid #e2e8f0;
-  border-radius: 17px;
-  font-size: 25px;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -250,14 +282,15 @@
 }
 
 .submit-button {
-  width: 371px;
-  height: 54px;
-  padding: 0;
+  min-width: 100px;
+  width: auto;
+  height: 40px;
+  padding: 0 20px;
   background-color: #1E293B;
   color: white;
   border: none;
-  border-radius: 17px;
-  font-size: 25px;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -266,6 +299,12 @@
   justify-content: center;
 }
 
-.submit-button:hover {
+.submit-button:hover:not(:disabled) {
   background-color: #0f172a;
+}
+
+.submit-button:disabled,
+.save-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

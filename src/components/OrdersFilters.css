@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   min-width: 0;
   width: 100%;
 }
@@ -58,7 +58,8 @@
 
 .filters-center {
   flex: 1 1 0%;
-  min-width: 560px;
+  min-width: 0;
+  max-width: 100%;
   margin: 0 4px;
 }
 
@@ -98,7 +99,7 @@
 .filters-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
   flex-shrink: 0;
   margin-left: auto;
 }
@@ -138,24 +139,38 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.new-order-button {
-  height: 40px;
-  padding: 0 20px;
-  background-color: #1e293b;
-  color: white;
+.new-order-button,
+.manage-skus-button {
+  height: 34px;
+  padding: 0 14px;
   border: none;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.new-order-button {
+  background-color: #1e293b;
+  color: white;
 }
 
 .new-order-button:hover {
   background-color: #0f172a;
+}
+
+.manage-skus-button {
+  background-color: #475569;
+  color: white;
+}
+
+.manage-skus-button:hover {
+  background-color: #334155;
 }

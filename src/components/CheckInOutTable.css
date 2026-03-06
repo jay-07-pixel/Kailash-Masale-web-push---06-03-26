@@ -9,6 +9,20 @@
   overflow-x: auto;
 }
 
+.checkinout-table-empty {
+  padding: 48px 24px;
+  text-align: center;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+}
+
+.checkinout-table-empty-text {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
 .checkinout-table {
   width: 100%;
   border-collapse: collapse;
@@ -108,41 +122,67 @@
   font-weight: 500;
 }
 
-.notes-cell {
-  position: relative;
+.detail-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
   cursor: pointer;
-  max-width: 200px;
+  transition: background 0.2s, border-color 0.2s;
 }
 
-.notes-content {
-  padding: 8px;
-  background-color: #f3f4f6;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #4a5568;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding-right: 24px;
+.detail-dropdown-trigger:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
 }
 
-.notes-content.expanded {
-  white-space: normal;
-  word-wrap: break-word;
-}
-
-.notes-arrow-img {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
+.detail-dropdown-icon {
+  width: 20px;
+  height: 20px;
   object-fit: contain;
-  pointer-events: none;
   transition: transform 0.2s;
 }
 
-.notes-arrow-img.expanded {
-  transform: translateY(-50%) rotate(180deg);
+.detail-dropdown-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.detail-expanded-row {
+  background: #f8fafc;
+}
+
+.detail-expanded-cell {
+  padding: 0 !important;
+  vertical-align: top;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 16px 20px;
+}
+
+.detail-panel-section {
+  min-width: 0;
+}
+
+.detail-panel-title {
+  margin: 0 0 6px 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-panel-content {
+  margin: 0;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.5;
 }

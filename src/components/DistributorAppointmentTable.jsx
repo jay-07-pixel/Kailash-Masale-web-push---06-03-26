@@ -2,13 +2,6 @@ import React from 'react'
 import './DistributorAppointmentTable.css'
 
 const DistributorAppointmentTable = () => {
-  const getDistributorBadgeStyles = (icon) => {
-    if (icon === 'VP') {
-      return { backgroundColor: '#FED7AA', color: '#ea580c' }
-    }
-    return { backgroundColor: '#DBEAFE', color: '#2563eb' }
-  }
-
   const tableData = [
     {
       id: 1,
@@ -61,12 +54,6 @@ const DistributorAppointmentTable = () => {
                 <td className="da-td-employee">{row.employeeAssigned}</td>
                 <td className="da-td-distributor">
                   <div className="da-distributor-cell">
-                    <div
-                      className="da-distributor-badge"
-                      style={getDistributorBadgeStyles(row.distributor.icon)}
-                    >
-                      {row.distributor.icon}
-                    </div>
                     <div className="da-distributor-info">
                       <div className="da-distributor-name">{row.distributor.name}</div>
                       <div className="da-distributor-location">{row.distributor.location}</div>

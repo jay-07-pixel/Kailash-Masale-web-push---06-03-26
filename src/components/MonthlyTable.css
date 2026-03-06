@@ -34,9 +34,22 @@
   word-wrap: break-word;
 }
 
+.monthly-table th:nth-last-child(2) {
+  min-width: 90px;
+}
+
 .monthly-table th:last-child {
   width: 50px;
-  padding: 10px 4px;
+  min-width: 120px;
+  padding: 10px 8px;
+}
+
+.monthly-th-highlight {
+  font-weight: 700 !important;
+}
+
+.monthly-td-highlight {
+  font-weight: 700 !important;
 }
 
 .monthly-table td {
@@ -50,8 +63,14 @@
   overflow-wrap: break-word;
 }
 
+.monthly-table td:nth-last-child(2) {
+  min-width: 90px;
+  white-space: nowrap;
+}
+
 .monthly-table td:last-child {
-  padding: 10px 4px;
+  padding: 10px 8px;
+  min-width: 120px;
 }
 
 .employee-cell {
@@ -90,6 +109,11 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
+}
+
+.monthly-table .distributor-count-cell {
+  font-weight: 600;
+  color: #111827;
 }
 
 .detail-table .distributor-cell {
@@ -155,20 +179,35 @@
 
 .expanded-cell {
   padding: 0 !important;
+  background-color: #f9fafb;
 }
 
-.expanded-content {
-  padding: 12px 16px;
+.expanded-cell-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 16px 6px;
   background-color: #f9fafb;
-  max-width: 100%;
-  overflow-x: auto;
+  position: sticky;
+  right: 0;
 }
 
 .action-buttons-container {
   display: flex;
   gap: 8px;
-  justify-content: flex-end;
-  margin-bottom: 12px;
+}
+
+.expanded-content {
+  padding: 0 16px 12px;
+  background-color: #f9fafb;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.detail-table-empty {
+  text-align: center;
+  padding: 16px;
+  color: #6b7280;
+  font-size: 13px;
 }
 
 .action-btn {
@@ -334,4 +373,243 @@
 
 .detail-table .distributor-location {
   font-size: 10px;
+}
+
+/* Edit modal */
+.monthly-edit-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.monthly-edit-modal {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px 24px;
+  min-width: 320px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.monthly-edit-modal-title {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.monthly-edit-modal-error {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+.monthly-edit-modal-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+
+.monthly-edit-modal-box-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.monthly-edit-modal-select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #111827;
+  cursor: pointer;
+}
+
+.monthly-edit-modal-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.monthly-edit-modal-details-box {
+  background: #fff;
+  border-color: #e2e8f0;
+  padding: 18px;
+}
+
+.monthly-edit-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 0;
+}
+
+.monthly-edit-modal-field-row,
+.monthly-edit-modal-horizontal-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-end;
+}
+
+.monthly-edit-modal-horizontal-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .monthly-edit-modal-horizontal-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.monthly-edit-modal-label-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  min-width: 0;
+}
+
+.monthly-edit-modal-label-inline input {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.monthly-edit-modal-label-inline input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.monthly-edit-modal-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.monthly-edit-modal-form input {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.monthly-edit-modal-form input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.monthly-edit-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.monthly-edit-modal-cancel,
+.monthly-edit-modal-save {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.monthly-edit-modal-cancel {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.monthly-edit-modal-cancel:hover {
+  background: #e5e7eb;
+}
+
+.monthly-edit-modal-save {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+}
+
+.monthly-edit-modal-save:hover {
+  background: #1d4ed8;
+}
+
+.monthly-edit-modal-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Row end cell — badge + expand button side by side */
+.row-end-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+/* Status badge on main row */
+.row-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 9px;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-left: 10px;
+}
+
+.row-status-approved {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.row-status-rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+/* Active (currently selected) state on action buttons */
+.action-btn-active-approve {
+  background: #16a34a !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 2px #bbf7d0;
+}
+
+.action-btn-active-reject {
+  background: #dc2626 !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 2px #fecaca;
 }

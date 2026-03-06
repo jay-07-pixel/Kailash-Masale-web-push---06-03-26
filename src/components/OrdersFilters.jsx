@@ -1,13 +1,31 @@
 import React, { useState } from 'react'
 import NewOrderModal from './NewOrderModal'
+import ManageSKUsModal from './ManageSKUsModal'
 import './OrdersFilters.css'
 
-const OrdersFilters = () => {
-  const [year, setYear] = useState('2026')
-  const [month, setMonth] = useState('Jan')
-  const [searchQuery, setSearchQuery] = useState('')
+const MONTH_OPTIONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+const getDefaultYear = () => new Date().getFullYear()
+const getDefaultMonth = () => MONTH_OPTIONS[new Date().getMonth()]
+
+const YEAR_OPTIONS = (() => {
+  const current = new Date().getFullYear()
+  return [current, current - 1, current - 2]
+})()
+
+const OrdersFilters = ({ searchQuery = '', setSearchQuery, year: yearProp, setYear: setYearProp, month: monthProp, setMonth: setMonthProp }) => {
+  const [internalYear, setInternalYear] = useState(() => getDefaultYear())
+  const [internalMonth, setInternalMonth] = useState(() => getDefaultMonth())
+  const year = yearProp !== undefined ? yearProp : internalYear
+  const setYear = setYearProp || setInternalYear
+  const month = monthProp !== undefined ? monthProp : internalMonth
+  const setMonth = setMonthProp || setInternalMonth
+  const [internalSearch, setInternalSearch] = useState('')
+  const q = setSearchQuery != null ? searchQuery : internalSearch
+  const setQ = setSearchQuery != null ? setSearchQuery : setInternalSearch
   const [activeTab, setActiveTab] = useState('All')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isManageSKUsOpen, setIsManageSKUsOpen] = useState(false)
 
   const tabs = ['All', 'Pending', 'Placed', 'Declined']
 
@@ -19,12 +37,12 @@ const OrdersFilters = () => {
             <span className="filter-inline-label">Year:-</span>
             <select
               value={year}
-              onChange={(e) => setYear(e.target.value)}
+              onChange={(e) => setYear(Number(e.target.value))}
               className="filter-select"
             >
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
+              {YEAR_OPTIONS.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
             </select>
           </div>
           <div className="filter-inline">
@@ -56,8 +74,8 @@ const OrdersFilters = () => {
             <input
               type="text"
               placeholder="Search Employee or Distributor"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
               className="filter-input search-input"
             />
           </div>
@@ -76,6 +94,13 @@ const OrdersFilters = () => {
             ))}
           </div>
           <button
+            type="button"
+            className="manage-skus-button"
+            onClick={() => setIsManageSKUsOpen(true)}
+          >
+            Manage SKUs
+          </button>
+          <button
             className="new-order-button"
             onClick={() => setIsModalOpen(true)}
           >
@@ -86,6 +111,10 @@ const OrdersFilters = () => {
       <NewOrderModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+      <ManageSKUsModal
+        isOpen={isManageSKUsOpen}
+        onClose={() => setIsManageSKUsOpen(false)}
       />
     </div>
   )

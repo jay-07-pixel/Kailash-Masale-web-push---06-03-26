@@ -1,16 +1,56 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import './DistributorSummaryCards.css'
 
-const DistributorSummaryCards = () => {
+function getDateFromCreatedAt(createdAt) {
+  if (!createdAt) return null
+  if (typeof createdAt.toDate === 'function') return createdAt.toDate()
+  if (createdAt instanceof Date) return createdAt
+  const t = typeof createdAt?.seconds === 'number' ? createdAt.seconds * 1000 : Date.parse(createdAt)
+  return isNaN(t) ? null : new Date(t)
+}
+
+function getMonthTrend(distributors) {
+  const now = new Date()
+  const thisYear = now.getFullYear()
+  const thisMonth = now.getMonth()
+  const thisMonthStart = new Date(thisYear, thisMonth, 1)
+  const thisMonthEnd = new Date(thisYear, thisMonth + 1, 0, 23, 59, 59, 999)
+  const lastMonthStart = new Date(thisYear, thisMonth - 1, 1)
+  const lastMonthEnd = new Date(thisYear, thisMonth, 0, 23, 59, 59, 999)
+
+  let countThisMonth = 0
+  let countLastMonth = 0
+  for (const d of distributors) {
+    const date = getDateFromCreatedAt(d.createdAt)
+    if (!date) continue
+    if (date >= thisMonthStart && date <= thisMonthEnd) countThisMonth++
+    else if (date >= lastMonthStart && date <= lastMonthEnd) countLastMonth++
+  }
+
+  if (countLastMonth === 0) {
+    if (countThisMonth > 0) return { text: `↑ +${countThisMonth} this month`, positive: true }
+    return { text: '0% this month', positive: true }
+  }
+  const pct = Math.round(((countThisMonth - countLastMonth) / countLastMonth) * 100)
+  const positive = pct >= 0
+  const text = pct >= 0 ? `↑ +${pct}% this month` : `↓ ${pct}% this month`
+  return { text, positive }
+}
+
+const DistributorSummaryCards = ({ distributors = [], allDistributorsForTrend }) => {
+  const totalCount = Array.isArray(distributors) ? distributors.length : 0
+  const listForTrend = allDistributorsForTrend ?? distributors
+  const monthTrend = useMemo(() => getMonthTrend(Array.isArray(listForTrend) ? listForTrend : []), [listForTrend])
+
   return (
     <div className="distributor-summary-cards">
       <div className="summary-card total-distributors">
         <div className="card-content">
           <div className="card-title">Total Distributors</div>
-          <div className="card-value">1,248</div>
-          <div className="card-trend positive">
-            <span className="trend-icon">↑</span>
-            <span>+12% this month</span>
+          <div className="card-value">{totalCount.toLocaleString()}</div>
+          <div className={`card-trend ${monthTrend.positive ? 'positive' : 'negative'}`}>
+            <span className="trend-icon">{monthTrend.positive ? '↑' : '↓'}</span>
+            <span>{monthTrend.text}</span>
           </div>
         </div>
       </div>

@@ -1,13 +1,26 @@
 import React, { useState } from 'react'
 import MonthlyTable from './MonthlyTable'
-import DistributorAppointmentModal from './DistributorAppointmentModal'
 import './MonthlyFilters.css'
 
-const MonthlyFilters = () => {
-  const [year, setYear] = useState('2026')
-  const [month, setMonth] = useState('Jan')
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+const now = new Date()
+
+const MonthlyFilters = ({
+  year: controlledYear,
+  month: controlledMonth,
+  onYearChange,
+  onMonthChange,
+}) => {
+  const isControlled = controlledYear != null && controlledMonth != null && onYearChange && onMonthChange
+  const [internalYear, setInternalYear] = useState(String(now.getFullYear()))
+  const [internalMonth, setInternalMonth] = useState(MONTH_LABELS[now.getMonth()])
   const [searchQuery, setSearchQuery] = useState('')
-  const [isDistributorModalOpen, setIsDistributorModalOpen] = useState(false)
+
+  const year = isControlled ? controlledYear : internalYear
+  const month = isControlled ? controlledMonth : internalMonth
+  const setYear = isControlled ? onYearChange : setInternalYear
+  const setMonth = isControlled ? onMonthChange : setInternalMonth
 
   return (
     <div className="monthly-filters-container">
@@ -20,9 +33,10 @@ const MonthlyFilters = () => {
               onChange={(e) => setYear(e.target.value)}
               className="monthly-filter-select"
             >
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
+              {[0, 1, 2].map(i => {
+                const y = String(now.getFullYear() - i)
+                return <option key={y} value={y}>{y}</option>
+              })}
             </select>
           </div>
           <div className="monthly-filter-inline">
@@ -32,18 +46,7 @@ const MonthlyFilters = () => {
               onChange={(e) => setMonth(e.target.value)}
               className="monthly-filter-select"
             >
-              <option value="Jan">Jan</option>
-              <option value="Feb">Feb</option>
-              <option value="Mar">Mar</option>
-              <option value="Apr">Apr</option>
-              <option value="May">May</option>
-              <option value="Jun">Jun</option>
-              <option value="Jul">Jul</option>
-              <option value="Aug">Aug</option>
-              <option value="Sep">Sep</option>
-              <option value="Oct">Oct</option>
-              <option value="Nov">Nov</option>
-              <option value="Dec">Dec</option>
+              {MONTH_LABELS.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
         </div>
@@ -60,24 +63,9 @@ const MonthlyFilters = () => {
             />
           </div>
         </div>
-
-        <div className="monthly-filters-right">
-          <button
-            type="button"
-            className="monthly-distributor-btn"
-            onClick={() => setIsDistributorModalOpen(true)}
-          >
-            Distributor Appointment
-          </button>
-        </div>
       </div>
 
-      <MonthlyTable />
-
-      <DistributorAppointmentModal
-        isOpen={isDistributorModalOpen}
-        onClose={() => setIsDistributorModalOpen(false)}
-      />
+      <MonthlyTable year={year} month={month} searchQuery={searchQuery} />
     </div>
   )
 }

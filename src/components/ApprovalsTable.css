@@ -1,141 +1,124 @@
-.approvals-cards-container {
-  padding: 0;
-}
-
-.approvals-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.approval-card {
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 0;
+/* ── Filter bar ── */
+.approvals-wrapper {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-}
-
-.approval-card-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px 16px 12px;
-}
-
-.approval-card-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background-color: #9ca3af;
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.approval-card-user {
-  flex: 1;
-  min-width: 0;
-}
-
-.approval-card-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a202c;
-  margin-bottom: 2px;
-}
-
-.approval-card-role {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.approval-card-date {
-  font-size: 12px;
-  color: #6b7280;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.approval-card-divider {
-  height: 1px;
-  background-color: #e5e7eb;
-  margin: 0 16px;
-}
-
-.approval-card-body {
-  padding: 14px 16px;
-  flex: 1;
-  min-height: 120px;
-}
-
-.approval-card-subject {
-  font-size: 13px;
-  font-weight: 600;
-  color: #1a202c;
-  margin-bottom: 8px;
-}
-
-.approval-card-reason {
-  font-size: 13px;
-  color: #4b5563;
-  line-height: 1.5;
-  margin: 0;
-  word-break: break-word;
-}
-
-.approval-card-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 0;
-  padding: 0;
 }
 
-.approval-btn {
+.approvals-filter-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border: none;
-  font-size: 14px;
-  font-weight: 500;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 0 18px;
+}
+
+.approvals-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.approvals-select {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  background: #fff;
   cursor: pointer;
-  color: white;
-  transition: opacity 0.2s;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.approvals-select:focus { border-color: #3b82f6; }
+
+.approvals-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0 12px;
+  height: 36px;
+  min-width: 220px;
+  transition: border-color 0.15s;
+}
+.approvals-search-wrap:focus-within { border-color: #3b82f6; }
+
+.approvals-search-icon { font-size: 13px; }
+
+.approvals-search-input {
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: #374151;
+  background: transparent;
+  flex: 1;
 }
 
-.approval-btn:hover {
-  opacity: 0.9;
+/* ── Card variants ── */
+.sunday-card {
+  position: relative;
 }
 
-.reject-btn {
-  background-color: #dc2626;
+.card-approved {
+  border-color: #bbf7d0 !important;
+  background: #f0fdf4 !important;
 }
 
-.approve-btn {
-  background-color: #16a34a;
+.card-rejected {
+  border-color: #fecaca !important;
+  background: #fef2f2 !important;
 }
 
-.approval-btn-icon {
-  font-size: 16px;
-  line-height: 1;
+/* ── Status badge ── */
+.sunday-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 3px 10px;
+  width: fit-content;
+  margin-bottom: -4px;
 }
 
-@media (max-width: 1200px) {
-  .approvals-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.badge-approved {
+  background: #dcfce7;
+  color: #15803d;
 }
 
-@media (max-width: 768px) {
-  .approvals-cards-grid {
-    grid-template-columns: 1fr;
-  }
+.badge-rejected {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* ── Applied on label ── */
+.sunday-applied-on {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* ── Disabled / active button states ── */
+.approve-button:disabled,
+.reject-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-active-approve {
+  background-color: #059669 !important;
+  box-shadow: 0 0 0 2px #6ee7b7;
+}
+
+.btn-active-reject {
+  background-color: #dc2626 !important;
+  box-shadow: 0 0 0 2px #fca5a5;
 }

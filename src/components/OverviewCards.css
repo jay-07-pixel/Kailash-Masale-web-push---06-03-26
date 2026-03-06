@@ -114,3 +114,48 @@
   font-weight: 700;
   color: #1a202c;
 }
+
+.order-breakdown {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.order-breakdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 4px;
+  gap: 3px;
+}
+
+.order-breakdown-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pending-dot  { background-color: #f59e0b; }
+.placed-dot   { background-color: #10b981; }
+.declined-dot { background-color: #ef4444; }
+
+.order-breakdown-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.order-breakdown-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a202c;
+  line-height: 1.1;
+}

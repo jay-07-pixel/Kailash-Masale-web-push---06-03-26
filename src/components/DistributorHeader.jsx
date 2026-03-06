@@ -31,13 +31,13 @@ const DistributorHeader = () => {
         <div className="user-profile">
           <div className="profile-avatar">
             <img
-              src="https://ui-avatars.com/api/?name=Alex+Morgan&background=4a90e2&color=fff"
-              alt="Alex Morgan"
+              src="https://ui-avatars.com/api/?name=Shlok+Thakral&background=4a90e2&color=fff"
+              alt="Shlok Thakral"
             />
           </div>
           <div className="profile-info">
-            <div className="profile-name">Alex Morgan</div>
-            <div className="profile-role">Regional Manager</div>
+            <div className="profile-name">Shlok Thakral</div>
+            <div className="profile-role">Kailash Masale</div>
           </div>
         </div>
       </div>

@@ -103,6 +103,7 @@
 .task-actions {
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 .action-button {
@@ -112,26 +113,45 @@
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 6px;
-  background-color: #f7fafc;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: opacity 0.2s, transform 0.15s;
 }
 
 .action-button:hover {
-  background-color: #edf2f7;
+  opacity: 0.9;
+  transform: scale(1.05);
 }
 
-.action-button.edit:hover {
-  background-color: #dbeafe;
+.action-button-complete {
+  background-color: #22c55e;
+  color: #fff;
 }
 
-.action-button.delete:hover {
-  background-color: #fee2e2;
+.action-button-complete .task-action-svg {
+  color: #fff;
 }
 
-.action-icon {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
+.action-button-edit {
+  background-color: #9ca3af;
+  color: #1f2937;
+}
+
+.action-button-edit .task-action-pencil {
+  color: #1f2937;
+}
+
+.action-button-delete {
+  background-color: #ef4444;
+  color: #fff;
+}
+
+.action-button-delete .task-action-svg {
+  color: #fff;
+}
+
+.task-action-svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }

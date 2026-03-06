@@ -2,9 +2,12 @@ import React, { useState } from 'react'
 import DisbursementTable from './DisbursementTable'
 import './DisbursementFilters.css'
 
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
 const DisbursementFilters = () => {
-  const [year, setYear] = useState('2026')
-  const [month, setMonth] = useState('Jan')
+  const now = new Date()
+  const [year, setYear] = useState(String(now.getFullYear()))
+  const [month, setMonth] = useState(MONTH_LABELS[now.getMonth()])
   const [searchQuery, setSearchQuery] = useState('')
 
   return (
@@ -18,9 +21,7 @@ const DisbursementFilters = () => {
               onChange={(e) => setYear(e.target.value)}
               className="disb-filter-select"
             >
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
+              {[0,1,2].map(i => { const y = String(now.getFullYear()-i); return <option key={y} value={y}>{y}</option> })}
             </select>
           </div>
           <div className="disb-filter-inline">
@@ -30,18 +31,7 @@ const DisbursementFilters = () => {
               onChange={(e) => setMonth(e.target.value)}
               className="disb-filter-select"
             >
-              <option value="Jan">Jan</option>
-              <option value="Feb">Feb</option>
-              <option value="Mar">Mar</option>
-              <option value="Apr">Apr</option>
-              <option value="May">May</option>
-              <option value="Jun">Jun</option>
-              <option value="Jul">Jul</option>
-              <option value="Aug">Aug</option>
-              <option value="Sep">Sep</option>
-              <option value="Oct">Oct</option>
-              <option value="Nov">Nov</option>
-              <option value="Dec">Dec</option>
+              {MONTH_LABELS.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
         </div>
@@ -66,7 +56,7 @@ const DisbursementFilters = () => {
         </div>
       </div>
       
-      <DisbursementTable />
+      <DisbursementTable year={year} month={month} searchQuery={searchQuery} />
     </div>
   )
 }

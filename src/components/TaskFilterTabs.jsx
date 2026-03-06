@@ -4,7 +4,6 @@ import './TaskFilterTabs.css'
 const TaskFilterTabs = ({ activeTab, setActiveTab }) => {
   const tabs = [
     { id: 'pending', label: 'Pending' },
-    { id: 'ongoing', label: 'Ongoing' },
     { id: 'resolved', label: 'Resolved' },
   ]
 

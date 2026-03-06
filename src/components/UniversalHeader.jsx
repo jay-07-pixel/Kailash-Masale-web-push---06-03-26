@@ -20,13 +20,13 @@ const UniversalHeader = ({ title }) => {
         />
         <div className="user-info-header">
           <img
-            src="https://ui-avatars.com/api/?name=Alex+Morgan&background=4a90e2&color=fff"
+            src="https://ui-avatars.com/api/?name=Shlok+Thakral&background=4a90e2&color=fff"
             alt="User"
             className="user-avatar-header"
           />
           <div className="user-details-header">
-            <div className="user-name-header">Alex Morgan</div>
-            <div className="user-role-header">Regional Manager</div>
+            <div className="user-name-header">Shlok Thakral</div>
+            <div className="user-role-header">Kailash Masale</div>
           </div>
         </div>
       </div>

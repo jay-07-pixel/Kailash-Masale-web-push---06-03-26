@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { collection, onSnapshot } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
 import {
@@ -192,7 +193,7 @@ const Charts = () => {
         </ResponsiveContainer>
       </div>
 
-      <div className="chart-card">
+      <Link to="/pending-task" className="chart-card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
         <h3 className="chart-title">Task Distribution</h3>
         <div className="pie-chart-container">
           <ResponsiveContainer width="100%" height={200}>
@@ -232,7 +233,7 @@ const Charts = () => {
             ))}
           </div>
         </div>
-      </div>
+      </Link>
 
       <div className="chart-card">
         <h3 className="chart-title">Productivity</h3>

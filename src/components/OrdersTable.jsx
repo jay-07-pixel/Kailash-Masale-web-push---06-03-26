@@ -74,6 +74,16 @@ function parseOrderDateToObj(dateStr) {
   return new Date(yr, mon, day)
 }
 
+/** Safe timestamp to milliseconds (handles Firestore Timestamp and avoids invalid Date). */
+function getTimestampMillis(doc) {
+  if (!doc || !doc.timestamp) return 0
+  const t = doc.timestamp
+  if (typeof t.toDate === 'function') return t.toDate().getTime()
+  if (t && typeof t.getTime === 'function') return t.getTime()
+  const d = new Date(t)
+  return Number.isFinite(d.getTime()) ? d.getTime() : 0
+}
+
 function getOrderDate(doc) {
   if (doc.timestamp) {
     const d = typeof doc.timestamp.toDate === 'function' ? doc.timestamp.toDate() : new Date(doc.timestamp)
@@ -250,8 +260,8 @@ const OrdersTable = ({ searchQuery = '', year, month }) => {
     }
     const groups = {}
     const sorted = [...firestoreOrders].filter(matchesFilter).sort((a, b) => {
-      const ta = a.timestamp ? new Date(a.timestamp).getTime() : 0
-      const tb = b.timestamp ? new Date(b.timestamp).getTime() : 0
+      const ta = getTimestampMillis(a)
+      const tb = getTimestampMillis(b)
       return ta - tb
     })
     sorted.forEach((doc) => {
@@ -277,11 +287,12 @@ const OrdersTable = ({ searchQuery = '', year, month }) => {
           orders: [],
         }
       }
-      const dateStr = doc.date || (doc.timestamp ? new Date(doc.timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '/') : '—')
+      const ts = getTimestampMillis(doc)
+      const dateObj = getOrderDate(doc)
+      const dateStr = doc.date || (dateObj ? dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '/') : '—')
       const kg = doc.totalKg != null ? String(doc.totalKg) : (doc.kg != null ? String(doc.kg) : '—')
       const orderNumber = doc.orderNumber != null ? Number(doc.orderNumber) : (doc.order_number != null ? Number(doc.order_number) : 1)
       const orderIndex = groups[key].orders.length
-      const ts = doc.timestamp ? new Date(doc.timestamp).getTime() : 0
       groups[key].orders.push({
         firestoreId: doc.id,
         date: dateStr,

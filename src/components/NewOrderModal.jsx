@@ -126,9 +126,9 @@ const NewOrderModal = ({ isOpen, onClose }) => {
           submittedAt: now.toLocaleString(),
         })
       }
+      onClose()
       setSelectedDistributor('')
       setItems([{ id: 1 }])
-      onClose()
     } catch (err) {
       console.error('Failed to create order:', err)
       setSubmitError(err?.message || 'Failed to create order. Please try again.')

@@ -5,48 +5,70 @@ import './OrdersSummaryCards.css'
 
 const ORDERS_COLLECTION = 'orders'
 
+/** Safe timestamp to milliseconds (handles Firestore Timestamp, never throws). */
+function getTimestampMillis(doc) {
+  try {
+    if (!doc || doc.timestamp == null) return 0
+    const t = doc.timestamp
+    if (typeof t.toDate === 'function') {
+      const ms = t.toDate().getTime()
+      return Number.isFinite(ms) ? ms : 0
+    }
+    if (t && typeof t.getTime === 'function') {
+      const ms = t.getTime()
+      return Number.isFinite(ms) ? ms : 0
+    }
+    const d = new Date(t)
+    return Number.isFinite(d.getTime()) ? d.getTime() : 0
+  } catch (_) {
+    return 0
+  }
+}
+
 /** Group docs by (employeeEmail, orderNumber) so each "whole order" counts once, not sub-orders. */
 function getOrderGroupsFromDocs(docs) {
-  const sorted = [...docs].sort((a, b) => {
-    const ta = a.timestamp ? new Date(a.timestamp).getTime() : 0
-    const tb = b.timestamp ? new Date(b.timestamp).getTime() : 0
-    return ta - tb
-  })
-  const byEmployee = {}
-  sorted.forEach((doc) => {
-    const key = (doc.employeeEmail || '').trim().toLowerCase()
-    if (!byEmployee[key]) byEmployee[key] = []
-    const distName = (doc.distributor || '').trim() || '—'
-    const orderNumber = doc.orderNumber != null ? Number(doc.orderNumber) : (doc.order_number != null ? Number(doc.order_number) : null)
-    byEmployee[key].push({
-      ...doc,
-      distributor: distName,
-      orderNumber: orderNumber ?? undefined,
+  if (!Array.isArray(docs) || docs.length === 0) return []
+  try {
+    const sorted = [...docs].sort((a, b) => getTimestampMillis(a) - getTimestampMillis(b))
+    const byEmployee = {}
+    sorted.forEach((doc) => {
+      const key = String(doc.employeeEmail ?? '').trim().toLowerCase()
+      if (!byEmployee[key]) byEmployee[key] = []
+      const distName = String(doc.distributor ?? '').trim() || '—'
+      const orderNumber = doc.orderNumber != null ? Number(doc.orderNumber) : (doc.order_number != null ? Number(doc.order_number) : null)
+      byEmployee[key].push({
+        ...doc,
+        distributor: distName,
+        orderNumber: orderNumber ?? undefined,
+      })
     })
-  })
-  const groups = []
-  Object.values(byEmployee).forEach((empDocs) => {
-    const withDerived = [...empDocs].sort((a, b) => (a.timestamp ? new Date(a.timestamp).getTime() : 0) - (b.timestamp ? new Date(b.timestamp).getTime() : 0))
-    const distToNum = {}
-    let next = 1
-    withDerived.forEach((d) => {
-      const dk = d.distributor || '—'
-      if (distToNum[dk] == null) {
-        distToNum[dk] = next
-        next += 1
-      }
-      d.derivedOrderNumber = distToNum[dk]
+    const groups = []
+    Object.values(byEmployee).forEach((empDocs) => {
+      const withDerived = [...empDocs].sort((a, b) => getTimestampMillis(a) - getTimestampMillis(b))
+      const distToNum = {}
+      let next = 1
+      withDerived.forEach((d) => {
+        const dk = d.distributor || '—'
+        if (distToNum[dk] == null) {
+          distToNum[dk] = next
+          next += 1
+        }
+        d.derivedOrderNumber = distToNum[dk]
+      })
+      const useFirebase = new Set(empDocs.map((o) => o.orderNumber).filter((n) => n != null)).size > 1
+      const byNum = {}
+      empDocs.forEach((d) => {
+        const num = useFirebase ? (d.orderNumber != null ? Number(d.orderNumber) : 1) : (d.derivedOrderNumber ?? 1)
+        const numKey = Number.isFinite(num) ? num : 1
+        if (!byNum[numKey]) byNum[numKey] = []
+        byNum[numKey].push(d)
+      })
+      Object.values(byNum).forEach((lines) => groups.push(lines))
     })
-    const useFirebase = new Set(empDocs.map((o) => o.orderNumber).filter((n) => n != null)).size > 1
-    const byNum = {}
-    empDocs.forEach((d) => {
-      const num = useFirebase ? (d.orderNumber != null ? Number(d.orderNumber) : 1) : (d.derivedOrderNumber ?? 1)
-      if (!byNum[num]) byNum[num] = []
-      byNum[num].push(d)
-    })
-    Object.values(byNum).forEach((lines) => groups.push(lines))
-  })
-  return groups
+    return groups
+  } catch (_) {
+    return []
+  }
 }
 
 /** One status per group: Declined if any, Placed if all, else Pending */
@@ -59,12 +81,39 @@ function getGroupStatus(lines) {
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-function getOrderDate(doc) {
-  if (doc.timestamp) {
-    const d = typeof doc.timestamp.toDate === 'function' ? doc.timestamp.toDate() : new Date(doc.timestamp)
-    if (!isNaN(d.getTime())) return d
+function parseOrderDate(dateStr) {
+  if (!dateStr) return null
+  try {
+    const s = String(dateStr).trim().replace(/\//g, '-')
+    const parts = s.split('-')
+    if (parts.length !== 3) return null
+    const day = parseInt(parts[0], 10)
+    const month = parseInt(parts[1], 10) - 1
+    const year = parseInt(parts[2], 10)
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return null
+    if (year < 100) return new Date(year + 2000, month, day)
+    return new Date(year, month, day)
+  } catch {
+    return null
   }
-  if (doc.date) return parseOrderDate(doc.date)
+}
+
+function getOrderDate(doc) {
+  try {
+    if (doc && doc.timestamp) {
+      const t = doc.timestamp
+      if (typeof t.toDate === 'function') {
+        const d = t.toDate()
+        if (d && Number.isFinite(d.getTime())) return d
+      } else if (t && typeof t.getTime === 'function' && Number.isFinite(t.getTime())) {
+        return t
+      } else {
+        const d = new Date(t)
+        if (Number.isFinite(d.getTime())) return d
+      }
+    }
+    if (doc && doc.date) return parseOrderDate(doc.date)
+  } catch (_) {}
   return null
 }
 
@@ -80,45 +129,38 @@ const OrdersSummaryCards = ({ year, month }) => {
   }, [])
 
   const stats = useMemo(() => {
-    const targetYear = year != null ? Number(year) : null
-    const targetMonthIndex = month != null ? MONTH_LABELS.indexOf(String(month)) : -1
+    const safe = { totalOrders: 0, pending: 0, totalKg: 0, selectedLabel: null }
+    try {
+      const targetYear = year != null ? Number(year) : null
+      const targetMonthIndex = month != null ? MONTH_LABELS.indexOf(String(month)) : -1
 
-    const filteredOrders = orders.filter((doc) => {
-      const d = getOrderDate(doc)
-      if (!d) return true
-      if (targetYear != null && d.getFullYear() !== targetYear) return false
-      if (targetMonthIndex !== -1 && d.getMonth() !== targetMonthIndex) return false
-      return true
-    })
+      const filteredOrders = orders.filter((doc) => {
+        const d = getOrderDate(doc)
+        if (!d) return true
+        if (targetYear != null && d.getFullYear() !== targetYear) return false
+        if (targetMonthIndex !== -1 && d.getMonth() !== targetMonthIndex) return false
+        return true
+      })
 
-    const orderGroups = getOrderGroupsFromDocs(filteredOrders)
-    const totalOrders = orderGroups.length
-    const pending = orderGroups.filter((lines) => getGroupStatus(lines) === 'Pending').length
-    const totalKg = filteredOrders.reduce((sum, o) => sum + (parseFloat(o.totalKg) || parseFloat(o.kg) || 0), 0)
+      const orderGroups = getOrderGroupsFromDocs(filteredOrders)
+      const totalOrders = orderGroups.length
+      const pending = orderGroups.filter((lines) => getGroupStatus(lines) === 'Pending').length
+      const totalKg = filteredOrders.reduce((sum, o) => sum + (parseFloat(o.totalKg) || parseFloat(o.kg) || 0), 0)
 
-    const selectedLabel = month && year
-      ? `${month} ${year}`
-      : month || (year ? String(year) : null)
+      const selectedLabel = month && year
+        ? `${month} ${year}`
+        : month || (year ? String(year) : null)
 
-    return {
-      totalOrders,
-      pending,
-      totalKg: Math.round(totalKg * 10) / 10,
-      selectedLabel,
+      return {
+        totalOrders: Number.isFinite(totalOrders) ? totalOrders : 0,
+        pending: Number.isFinite(pending) ? pending : 0,
+        totalKg: Number.isFinite(totalKg) ? Math.round(totalKg * 10) / 10 : 0,
+        selectedLabel,
+      }
+    } catch (_) {
+      return safe
     }
   }, [orders, year, month])
-
-  function parseOrderDate(dateStr) {
-    if (!dateStr) return null
-    const s = String(dateStr).trim().replace(/\//g, '-')
-    const parts = s.split('-')
-    if (parts.length !== 3) return null
-    const day = parseInt(parts[0], 10)
-    const month = parseInt(parts[1], 10) - 1
-    const year = parseInt(parts[2], 10)
-    if (year < 100) return new Date(year + 2000, month, day)
-    return new Date(year, month, day)
-  }
 
   const cards = useMemo(() => [
     {

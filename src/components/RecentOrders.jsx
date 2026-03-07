@@ -66,13 +66,13 @@ const RecentOrders = () => {
   }
 
   return (
-    <div className="recent-orders-card">
+    <div className="recent-orders-card" onClick={() => navigate('/orders')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/orders') } }} style={{ cursor: 'pointer' }}>
       <div className="card-header-section">
         <div>
           <h3 className="card-title">Recent Orders</h3>
           <p className="card-subtitle">Manage distributor orders and schemes</p>
         </div>
-        <button className="new-order-button" onClick={() => navigate('/orders')}>View All Orders →</button>
+        <button type="button" className="new-order-button" onClick={(e) => { e.stopPropagation(); navigate('/orders') }}>View All Orders →</button>
       </div>
       <div className="table-container">
         <table className="data-table">

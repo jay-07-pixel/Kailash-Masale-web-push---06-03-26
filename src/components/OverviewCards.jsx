@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { collection, onSnapshot } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
 import './OverviewCards.css'
@@ -137,6 +138,13 @@ const OverviewCards = () => {
     ]
   }, [employees, orderStats, tasks, checkIns, checkOuts])
 
+  const cardRoutes = {
+    'Total Employees': '/my-team',
+    'Orders': '/orders',
+    'Ongoing Tasks': '/pending-task',
+    'Check-ins / Check-Outs': '/check-in-out',
+  }
+
   return (
     <div className="overview-cards">
       {cards.map((card, index) => {
@@ -144,8 +152,11 @@ const OverviewCards = () => {
         const isOrders = card.isOrderBreakdown
         const isOngoingTasks = card.title === 'Ongoing Tasks'
         const isCheckInOut = card.title === 'Check-ins / Check-Outs'
+        const to = cardRoutes[card.title]
+        const Wrapper = to ? Link : 'div'
+        const wrapperProps = to ? { to, style: { display: 'block', textDecoration: 'none', color: 'inherit' } } : {}
         return (
-          <div key={index} className="overview-card">
+          <Wrapper key={index} className="overview-card" {...wrapperProps}>
             <div className="card-header">
               {isTotalEmployees ? (
                 <div className="card-icon-wrapper card-icon-wrapper-blue">
@@ -192,7 +203,7 @@ const OverviewCards = () => {
             ) : (
               <div className="card-value">{card.value}</div>
             )}
-          </div>
+          </Wrapper>
         )
       })}
     </div>

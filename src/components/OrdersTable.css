@@ -46,10 +46,12 @@
   vertical-align: middle;
 }
 
+.orders-table th:nth-child(2),
 .orders-table th:nth-child(3),
 .orders-table th:nth-child(4),
 .orders-table th:nth-child(5),
-.orders-table th:nth-child(6) {
+.orders-table th:nth-child(6),
+.orders-table th:nth-child(7) {
   text-align: center;
 }
 
@@ -77,6 +79,28 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
   vertical-align: middle;
+}
+
+/* Align cell content under headers: 1 left, 2–7 center, 8 right */
+.orders-table td:nth-child(1) {
+  text-align: left;
+}
+
+.orders-table td:nth-child(2),
+.orders-table td:nth-child(3),
+.orders-table td:nth-child(4),
+.orders-table td:nth-child(5),
+.orders-table td:nth-child(6),
+.orders-table td:nth-child(7) {
+  text-align: center;
+}
+
+.orders-table td:nth-child(8) {
+  text-align: right;
+}
+
+.order-date-cell {
+  text-align: center;
 }
 
 .employee-cell {
@@ -154,6 +178,11 @@
   font-variant-numeric: tabular-nums;
   font-weight: 500;
   color: #374151;
+}
+
+.status-count.status-count-nonzero {
+  font-weight: 700;
+  color: #dc2626;
 }
 
 .status-badge {

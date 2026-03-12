@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
@@ -39,6 +39,12 @@ function MyTeamPage() {
   const [assignLocationId, setAssignLocationId] = useState('')
   const [assignLocationSaving, setAssignLocationSaving] = useState(false)
   const [assignLocationError, setAssignLocationError] = useState(null)
+  const [assignTeamModal, setAssignTeamModal] = useState(false)
+  const [assignTeamSearchQuery, setAssignTeamSearchQuery] = useState('')
+  const [assignTeamDropdownOpen, setAssignTeamDropdownOpen] = useState(false)
+  const [assignTeamMemberSaving, setAssignTeamMemberSaving] = useState(false)
+  const [assignTeamMemberError, setAssignTeamMemberError] = useState(null)
+  const assignTeamDropdownRef = useRef(null)
 
   const getNextSr = () => (employees.length === 0 ? 1 : Math.max(...employees.map((e) => e.sr || 0)) + 1)
 
@@ -179,6 +185,50 @@ function MyTeamPage() {
     }
   }
 
+  const isManager = (emp) => (emp?.designation || '').toLowerCase() === 'manager'
+  const nonManagerEmployees = useMemo(
+    () => employees.filter((e) => e.id && !e.id.startsWith('local-') && !isManager(e)),
+    [employees]
+  )
+
+  const addOneTeamMember = async (memberId) => {
+    if (!selectedEmployee || !memberId || !db || selectedEmployee.id?.startsWith('local-') || !isManager(selectedEmployee)) return
+    if ((selectedEmployee.assignedTeamMemberIds || []).includes(memberId)) return
+    setAssignTeamMemberError(null)
+    setAssignTeamMemberSaving(true)
+    try {
+      await updateDoc(doc(db, EMPLOYEES_COLLECTION, selectedEmployee.id), {
+        assignedTeamMemberIds: arrayUnion(memberId),
+      })
+      setSelectedEmployee((prev) => ({
+        ...prev,
+        assignedTeamMemberIds: [...(prev.assignedTeamMemberIds || []), memberId],
+      }))
+      setAssignTeamSearchQuery('')
+      setAssignTeamDropdownOpen(false)
+    } catch (err) {
+      console.error('Failed to assign team member:', err)
+      setAssignTeamMemberError(err?.message || 'Failed to save.')
+    } finally {
+      setAssignTeamMemberSaving(false)
+    }
+  }
+
+  const handleRemoveTeamMember = async (memberId) => {
+    if (!selectedEmployee || !db || selectedEmployee.id?.startsWith('local-') || !isManager(selectedEmployee)) return
+    try {
+      await updateDoc(doc(db, EMPLOYEES_COLLECTION, selectedEmployee.id), {
+        assignedTeamMemberIds: arrayRemove(memberId),
+      })
+      setSelectedEmployee((prev) => ({
+        ...prev,
+        assignedTeamMemberIds: (prev.assignedTeamMemberIds || []).filter((id) => id !== memberId),
+      }))
+    } catch (err) {
+      console.error('Failed to remove team member:', err)
+    }
+  }
+
   const handleDeleteMember = async () => {
     if (!selectedEmployee) return
     if (!window.confirm(`Delete ${selectedEmployee.salesPersonName} from the team?`)) return
@@ -216,15 +266,31 @@ function MyTeamPage() {
     setIsEditMode(true)
   }
 
+  const closeAssignTeamModal = () => {
+    setAssignTeamModal(false)
+    setAssignTeamSearchQuery('')
+    setAssignTeamDropdownOpen(false)
+    setAssignTeamMemberError(null)
+  }
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (assignTeamDropdownRef.current && !assignTeamDropdownRef.current.contains(e.target)) setAssignTeamDropdownOpen(false)
+    }
+    if (assignTeamDropdownOpen) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [assignTeamDropdownOpen])
+
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
-        if (isEditMode) setIsEditMode(false)
+        if (assignTeamModal) closeAssignTeamModal()
+        else if (isEditMode) setIsEditMode(false)
         else if (isAddModalOpen) setIsAddModalOpen(false)
         else setSelectedEmployee(null)
       }
     }
-    if (selectedEmployee || isAddModalOpen) {
+    if (selectedEmployee || isAddModalOpen || assignTeamModal) {
       document.addEventListener('keydown', handleEscape)
       document.body.style.overflow = 'hidden'
     }
@@ -232,7 +298,7 @@ function MyTeamPage() {
       document.removeEventListener('keydown', handleEscape)
       document.body.style.overflow = ''
     }
-  }, [selectedEmployee, isEditMode, isAddModalOpen])
+  }, [selectedEmployee, isEditMode, isAddModalOpen, assignTeamModal])
 
   const updateAddForm = (field, value) => setAddForm((f) => ({ ...f, [field]: value }))
   const updateEditForm = (field, value) => setEditForm((f) => ({ ...f, [field]: value }))
@@ -493,6 +559,48 @@ function MyTeamPage() {
                         <div className="my-team-detail-item"><span className="my-team-detail-label">Salary</span><span className="my-team-detail-value my-team-detail-value-accent">{selectedEmployee.salary}</span></div>
                         <h4 className="my-team-detail-section-title my-team-subsection-title">Head Quarter</h4>
                         <div className="my-team-detail-item"><span className="my-team-detail-label">Place</span><span className="my-team-detail-value">{selectedEmployee.headQuarter || '—'}</span></div>
+                        {isManager(selectedEmployee) && (
+                          <>
+                            <h4 className="my-team-detail-section-title my-team-subsection-title">Team Members</h4>
+                            <div className="my-team-detail-item my-team-detail-item-locations">
+                              <span className="my-team-detail-label">Assigned team members</span>
+                              <span className="my-team-detail-value">
+                                {(selectedEmployee.assignedTeamMemberIds?.length > 0) ? (
+                                  <ul className="my-team-location-tags">
+                                    {(selectedEmployee.assignedTeamMemberIds || []).map((empId) => {
+                                      const emp = employees.find((e) => e.id === empId)
+                                      const name = emp ? `${emp.salesPersonName}${emp.designation ? ` (${emp.designation})` : ''}` : '—'
+                                      return (
+                                        <li key={empId} className="my-team-location-tag">
+                                          <span>{name}</span>
+                                          {db && !selectedEmployee.id?.startsWith('local-') && (
+                                            <button
+                                              type="button"
+                                              className="my-team-location-remove"
+                                              onClick={(e) => { e.stopPropagation(); handleRemoveTeamMember(empId) }}
+                                              aria-label={`Remove ${name}`}
+                                            >
+                                              ×
+                                            </button>
+                                          )}
+                                        </li>
+                                      )
+                                    })}
+                                  </ul>
+                                ) : '—'}
+                                {db && !selectedEmployee.id?.startsWith('local-') && (
+                                  <button
+                                    type="button"
+                                    className="my-team-assign-location-btn"
+                                    onClick={() => setAssignTeamModal(true)}
+                                  >
+                                    + Assign team member
+                                  </button>
+                                )}
+                              </span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="my-team-detail-section">
@@ -523,6 +631,107 @@ function MyTeamPage() {
                 <button type="button" className="my-team-btn my-team-btn-primary" onClick={handleUpdateMember}>Save</button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Assign team member modal (managers only) */}
+      {assignTeamModal && selectedEmployee && isManager(selectedEmployee) && (
+        <div className="my-team-modal-overlay" onClick={closeAssignTeamModal} role="dialog" aria-modal="true" aria-labelledby="assign-team-title">
+          <div className="my-team-modal-content my-team-assign-team-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="my-team-assign-team-header">
+              <h2 id="assign-team-title" className="my-team-assign-team-title">Assign team member</h2>
+              <p className="my-team-assign-team-subtitle">Add an employee to {selectedEmployee.salesPersonName}&apos;s team</p>
+              <button type="button" className="my-team-modal-close my-team-assign-team-close" onClick={closeAssignTeamModal} aria-label="Close"><span aria-hidden>×</span></button>
+            </div>
+            <div className="my-team-assign-team-body">
+              {(selectedEmployee.assignedTeamMemberIds || []).length > 0 && (
+                <div className="my-team-assign-team-section">
+                  <span className="my-team-assign-team-section-label">Assigned team</span>
+                  <div className="my-team-assign-team-chips">
+                    {(selectedEmployee.assignedTeamMemberIds || []).map((empId) => {
+                      const emp = employees.find((e) => e.id === empId)
+                      const label = emp ? `${emp.salesPersonName}${emp.designation ? ` (${emp.designation})` : ''}` : empId
+                      return (
+                        <span key={empId} className="my-team-assign-team-chip">
+                          <span>{label}</span>
+                          <button type="button" className="my-team-assign-team-chip-remove" onClick={() => handleRemoveTeamMember(empId)} aria-label={`Remove ${label}`}>×</button>
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+              <div className="my-team-assign-team-section">
+                <span className="my-team-assign-team-section-label">Add employee</span>
+                <div className="my-team-assign-team-dropdown-wrap" ref={assignTeamDropdownRef}>
+                  <div className={`my-team-assign-team-input-wrap ${assignTeamDropdownOpen ? 'is-open' : ''}`}>
+                    <input
+                      type="text"
+                      className="my-team-assign-team-input"
+                      placeholder="Search name or designation… Enter to add"
+                      value={assignTeamSearchQuery}
+                      onChange={(e) => { setAssignTeamSearchQuery(e.target.value); setAssignTeamDropdownOpen(true); setAssignTeamMemberError(null) }}
+                      onFocus={() => setAssignTeamDropdownOpen(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          const assignable = nonManagerEmployees
+                            .filter((emp) => !(selectedEmployee.assignedTeamMemberIds || []).includes(emp.id))
+                            .filter((emp) => {
+                              const q = (assignTeamSearchQuery || '').toLowerCase().trim()
+                              if (!q) return true
+                              const name = (emp.salesPersonName || '').toLowerCase()
+                              const designation = (emp.designation || '').toLowerCase()
+                              return name.includes(q) || designation.includes(q)
+                            })
+                          if (assignable.length > 0) addOneTeamMember(assignable[0].id)
+                        }
+                      }}
+                      disabled={assignTeamMemberSaving}
+                      aria-label="Search employee to assign"
+                      aria-autocomplete="list"
+                      aria-expanded={assignTeamDropdownOpen}
+                    />
+                    <span className="my-team-assign-team-chevron" aria-hidden>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+                    </span>
+                  </div>
+                  {assignTeamDropdownOpen && (() => {
+                  const assignable = nonManagerEmployees
+                    .filter((emp) => !(selectedEmployee.assignedTeamMemberIds || []).includes(emp.id))
+                    .filter((emp) => {
+                      const q = (assignTeamSearchQuery || '').toLowerCase().trim()
+                      if (!q) return true
+                      const name = (emp.salesPersonName || '').toLowerCase()
+                      const designation = (emp.designation || '').toLowerCase()
+                      return name.includes(q) || designation.includes(q)
+                    })
+                  if (assignable.length === 0) return <div className="my-team-assign-team-dropdown my-team-assign-team-dropdown-empty">No employees to add. Try a different search.</div>
+                  return (
+                    <ul className="my-team-assign-team-dropdown" role="listbox">
+                      {assignable.map((emp) => (
+                        <li
+                          key={emp.id}
+                          role="option"
+                          className="my-team-assign-team-option"
+                          onClick={() => addOneTeamMember(emp.id)}
+                        >
+                          {emp.salesPersonName}{emp.designation ? ` (${emp.designation})` : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  )
+                })()}
+                </div>
+              </div>
+              {assignTeamMemberError && (
+                <p className="my-team-assign-team-error" role="alert">{assignTeamMemberError}</p>
+              )}
+            </div>
+            <div className="my-team-assign-team-footer">
+              <button type="button" className="my-team-btn my-team-btn-primary my-team-assign-team-submit" onClick={closeAssignTeamModal}>Close</button>
+            </div>
           </div>
         </div>
       )}

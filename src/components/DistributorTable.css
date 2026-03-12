@@ -68,6 +68,7 @@
 .distributor-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .distributor-table thead {
@@ -85,18 +86,51 @@
   border-bottom: 2px solid #e2e8f0;
 }
 
-/* BIT NAME (col 2) and ZONE (col 3) – compact so less space between them */
+/* Column widths so table fills container and NOTES takes remaining space */
+.distributor-table th:nth-child(1),
+.distributor-table td:nth-child(1) {
+  width: 18%;
+  min-width: 0;
+}
+
 .distributor-table th:nth-child(2),
 .distributor-table td:nth-child(2) {
-  max-width: 180px;
+  width: 16%;
+  min-width: 0;
   padding-right: 6px;
 }
+
 .distributor-table th:nth-child(3),
 .distributor-table td:nth-child(3) {
-  width: 1%;
+  width: 10%;
+  min-width: 0;
   white-space: nowrap;
   padding-left: 2px;
   padding-right: 12px;
+}
+
+.distributor-table th:nth-child(4),
+.distributor-table td:nth-child(4) {
+  width: 18%;
+  min-width: 0;
+}
+
+.distributor-table th:nth-child(5),
+.distributor-table td:nth-child(5) {
+  width: 14%;
+  min-width: 0;
+}
+
+.distributor-table th:nth-child(6),
+.distributor-table td:nth-child(6) {
+  width: 12%;
+  min-width: 0;
+}
+
+.distributor-table th:nth-child(7),
+.distributor-table td:nth-child(7) {
+  width: 12%;
+  min-width: 0;
 }
 
 .distributor-table td {
@@ -313,28 +347,44 @@
   filter: brightness(0);
 }
 
-/* Notes column & dropdown */
-.distributor-notes-dropdown-btn {
+/* Notes column – note text in small box, click to open popup (no dropdown icon); fills column */
+.distributor-notes-cell {
+  min-width: 0;
+}
+
+.distributor-notes-preview-btn {
+  width: 100%;
   background: none;
   border: none;
-  padding: 4px;
+  padding: 4px 0;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+  display: block;
+  text-align: left;
+  font-size: inherit;
 }
 
-.distributor-notes-dropdown-btn:hover {
+.distributor-notes-preview-btn:hover .distributor-notes-preview-box {
   background-color: #f1f5f9;
+  border-color: #cbd5e0;
 }
 
-.distributor-notes-dropdown-icon {
-  width: 20px;
-  height: 20px;
-  object-fit: contain;
-  transition: transform 0.2s;
+.distributor-notes-preview-box {
+  display: inline-block;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.distributor-notes-preview-box.has-note {
+  background-color: #f8fafc;
+  color: #2d3748;
 }
 
 /* Notes popup modal */

@@ -46,15 +46,88 @@ i.weekly-approvals-table-container {
   text-align: center;
 }
 
+.weekly-approvals-table th.wa-status-counts-cell {
+  width: auto;
+  min-width: 260px;
+  padding: 12px 0 12px 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 44px;
+  gap: 0 16px;
+  align-items: center;
+  justify-items: center;
+}
+
+.wa-status-header-spacer {
+  min-width: 0;
+}
+
+.weekly-approvals-table th.wa-status-counts-cell .wa-status-count {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+.wa-status-counts-cell {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.wa-status-counts-cell .wa-status-count {
+  margin-right: 0;
+}
+
+.wa-status-count {
+  display: inline-block;
+  margin-right: 20px;
+  color: #475569;
+}
+
+.wa-status-count:last-child {
+  margin-right: 0;
+}
+
+.wa-status-count-pending { color: #64748b; }
+.wa-status-count-approved { color: #15803d; }
+.wa-status-count-declined { color: #b91c1c; }
+
+.wa-row-status-cell {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 44px;
+  gap: 0 16px;
+  align-items: center;
+  justify-items: center;
+  padding: 16px 0 16px 24px;
+}
+
+.wa-row-status-cell .wa-status-count {
+  margin-right: 0;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+/* Single continuous row border so the line doesn’t break between cells */
+.weekly-approvals-table tbody tr:not(:has(td[colspan="4"])) {
+  border-bottom: 1px solid #e2e8f0;
+}
+
 .weekly-approvals-table td {
   padding: 16px 12px;
-  border-bottom: 1px solid #e2e8f0;
   font-size: 13px;
   color: #2d3748;
+  vertical-align: middle;
 }
 
 .weekly-approvals-table td:last-child {
-  text-align: center;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.wa-row-status-cell .wa-row-end {
+  justify-self: end;
 }
 
 .employee-cell {
@@ -243,6 +316,14 @@ i.weekly-approvals-table-container {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid #e2e8f0;
+}
+
+/* Align BIT NAME and LAST DAY VISIT headers and cells centered under each other */
+.detail-table th:nth-child(3),
+.detail-table th:nth-child(4),
+.detail-table td:nth-child(3),
+.detail-table td:nth-child(4) {
+  text-align: center;
 }
 
 .detail-table td {

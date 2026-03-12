@@ -1,6 +1,22 @@
 import React, { useState } from 'react'
 import './CheckInOutTable.css'
 
+const isEmpty = (v) => v == null || v === '' || v === '—'
+
+const isAchievedEmpty = (v) =>
+  isEmpty(v) || v === 'kg' || v === '0kg' || (typeof v === 'string' && v.trim() === 'kg')
+
+const locationsSubmitted = (row) =>
+  !row.isOnLeave &&
+  row.checkInTs != null &&
+  row.checkOutTs != null &&
+  row.checkInLocation &&
+  row.checkInLocation !== '—' &&
+  row.checkOutLocation &&
+  row.checkOutLocation !== '—'
+
+const showRnsFor = (row, fieldEmpty) => locationsSubmitted(row) && fieldEmpty
+
 const CheckInOutTable = ({ tableData = [] }) => {
   const [expandedNotes, setExpandedNotes] = useState({})
 
@@ -78,6 +94,8 @@ const CheckInOutTable = ({ tableData = [] }) => {
                 <td>
                   {row.isOnLeave ? (
                     <span className="on-leave-badge">On Leave</span>
+                  ) : showRnsFor(row, !row.distributor?.name || row.distributor?.name === '—') ? (
+                    <span className="checkinout-rns">RNS</span>
                   ) : (
                     <div className="distributor-cell">
                       {row.distributor?.initial && (
@@ -94,7 +112,13 @@ const CheckInOutTable = ({ tableData = [] }) => {
                     </div>
                   )}
                 </td>
-                <td>{row.bitName ?? '—'}</td>
+                <td>
+                  {showRnsFor(row, !row.bitName || row.bitName === '—') ? (
+                    <span className="checkinout-rns">RNS</span>
+                  ) : (
+                    row.bitName ?? '—'
+                  )}
+                </td>
                 {row.isOnLeave ? (
                   <>
                     <td>-</td>
@@ -118,15 +142,47 @@ const CheckInOutTable = ({ tableData = [] }) => {
                 ) : (
                   <>
                     <td className="primary-in">
-                      {row.primaryIn ? `${row.primaryIn.current}/${row.primaryIn.total}` : '—'}
+                      {showRnsFor(row, !row.primaryIn) ? (
+                        <span className="checkinout-rns">RNS</span>
+                      ) : (
+                        row.primaryIn ? `${row.primaryIn.current}/${row.primaryIn.total}` : '—'
+                      )}
                     </td>
                     <td>
-                      <span className="work-time">{row.workTime || '—'}</span>
+                      {showRnsFor(row, !(row.workTime && String(row.workTime).trim())) ? (
+                        <span className="checkinout-rns">RNS</span>
+                      ) : (
+                        <span className="work-time">{row.workTime || '—'}</span>
+                      )}
                     </td>
-                    <td>{row.totalCall ?? '—'}</td>
-                    <td>{row.productiveCall ?? '—'}</td>
-                    <td>{row.primaryAchieved ?? '—'}</td>
-                    <td>{row.secondaryAchieved ?? '—'}</td>
+                    <td>
+                      {showRnsFor(row, isEmpty(row.totalCall)) ? (
+                        <span className="checkinout-rns">RNS</span>
+                      ) : (
+                        row.totalCall ?? '—'
+                      )}
+                    </td>
+                    <td>
+                      {showRnsFor(row, isEmpty(row.productiveCall)) ? (
+                        <span className="checkinout-rns">RNS</span>
+                      ) : (
+                        row.productiveCall ?? '—'
+                      )}
+                    </td>
+                    <td>
+                      {showRnsFor(row, isAchievedEmpty(row.primaryAchieved)) ? (
+                        <span className="checkinout-rns">RNS</span>
+                      ) : (
+                        row.primaryAchieved ?? '—'
+                      )}
+                    </td>
+                    <td>
+                      {showRnsFor(row, isAchievedEmpty(row.secondaryAchieved)) ? (
+                        <span className="checkinout-rns">RNS</span>
+                      ) : (
+                        row.secondaryAchieved ?? '—'
+                      )}
+                    </td>
                     <td>
                       <button
                         type="button"

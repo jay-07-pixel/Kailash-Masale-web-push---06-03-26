@@ -317,7 +317,13 @@ const OrdersTable = ({ searchQuery = '', year, month }) => {
         if (line.derivedOrderNumber != null) return
         line.derivedOrderNumber = line.orderNumber != null ? line.orderNumber : 1
       })
+      // Most recent order date for this row (for DATE column and sorting)
+      const byTimeDesc = [...row.orders].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+      const latest = byTimeDesc[0]
+      row.displayDate = latest ? latest.date : '—'
+      row.latestTimestamp = latest ? (latest.timestamp || 0) : 0
     })
+    rows.sort((a, b) => (b.latestTimestamp || 0) - (a.latestTimestamp || 0))
     return rows
   }, [firestoreOrders, year, month])
 
@@ -341,6 +347,7 @@ const OrdersTable = ({ searchQuery = '', year, month }) => {
             <tr>
               <th>DISTRIBUTOR</th>
               <th>EMPLOYEE</th>
+              <th>DATE</th>
               <th>ORDER DETAILS KG</th>
               <th>Pending</th>
               <th>Placed</th>
@@ -354,7 +361,7 @@ const OrdersTable = ({ searchQuery = '', year, month }) => {
           <tbody>
             {filteredOrders.length === 0 ? (
               <tr>
-                <td colSpan={7} className="orders-table-empty">
+                <td colSpan={8} className="orders-table-empty">
                   {ordersData.length === 0
                     ? (isFirebaseConfigured && db
                         ? 'No orders yet. Orders from Firebase will appear here.'
@@ -401,10 +408,19 @@ const OrdersTable = ({ searchQuery = '', year, month }) => {
                     </div>
                   </div>
                 </td>
+                <td className="order-date-cell">{order.displayDate || '—'}</td>
                 <td className="order-details">{order.orderDetails}</td>
-                <td className="status-count">{getStatusCounts(order, orderStatuses).pending}</td>
-                <td className="status-count">{getStatusCounts(order, orderStatuses).placed}</td>
-                <td className="status-count">{getStatusCounts(order, orderStatuses).declined}</td>
+                {(() => {
+                  const counts = getStatusCounts(order, orderStatuses)
+                  const pendingNonZero = counts.pending !== '00'
+                  return (
+                    <>
+                      <td className={`status-count ${pendingNonZero ? 'status-count-nonzero' : ''}`}>{counts.pending}</td>
+                      <td className="status-count">{counts.placed}</td>
+                      <td className="status-count">{counts.declined}</td>
+                    </>
+                  )
+                })()}
                 <td>
                   <button
                     className="detailed-button"
@@ -427,7 +443,7 @@ const OrdersTable = ({ searchQuery = '', year, month }) => {
                 const lines = selectedGroup ? selectedGroup.lines : []
                 return (
                 <tr className="orders-expanded-row">
-                  <td colSpan={7} className="orders-expanded-cell">
+                  <td colSpan={8} className="orders-expanded-cell">
                     <div className="orders-expanded-content">
                       <div className="order-tabs-with-actions">
                         <div className="order-tabs">

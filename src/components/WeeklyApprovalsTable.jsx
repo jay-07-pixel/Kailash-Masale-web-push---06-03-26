@@ -47,7 +47,7 @@ const WeeklyApprovalsTable = ({ year = '', month = '', searchQuery = '' }) => {
   const [expandedRows, setExpandedRows] = useState({})
   const [activeWeek, setActiveWeek] = useState(getCurrentWeekOfMonth)
   const [plans, setPlans] = useState([])
-  const [editModal, setEditModal] = useState({ open: false, row: null, activeWeek: 1, primaryGoal: '', visitList: [] })
+  const [editModal, setEditModal] = useState({ open: false, planId: null, employeeId: null, employeeName: '', activeWeek: 1, primaryGoal: '', visitList: [] })
   const [saving, setSaving] = useState(false)
   const [distributors, setDistributors] = useState([])
   const [employees, setEmployees] = useState([])
@@ -93,6 +93,7 @@ const WeeklyApprovalsTable = ({ year = '', month = '', searchQuery = '' }) => {
 
   const setRowStatus = async (rowId, status) => {
     if (!isFirebaseConfigured || !db) return
+    if (!rowId) return
     const newStatus = status === 'approved' ? 'approved' : 'rejected'
     setPlans((prev) =>
       prev.map((p) =>
@@ -114,6 +115,8 @@ const WeeklyApprovalsTable = ({ year = '', month = '', searchQuery = '' }) => {
   }
 
   const openEdit = (row, week) => {
+    const planId = row?.planIdByWeek?.[week] || row?.planIdByWeek?.[1] || row?.planId || row?.id
+    if (!planId) return
     const raw = String(row.primaryGoal || '').replace(/\s*kgs?/i, '').trim()
     const dd = row.detailsByWeek?.[week] ?? row.details ?? []
     const visitList = dd.map((d) => ({
@@ -122,10 +125,18 @@ const WeeklyApprovalsTable = ({ year = '', month = '', searchQuery = '' }) => {
       bitName: d.bitName ?? '',
       lastDayVisit: d.lastDayVisit ?? '',
     }))
-    setEditModal({ open: true, row, activeWeek: week, primaryGoal: raw, visitList })
+    setEditModal({
+      open: true,
+      planId,
+      employeeId: row.employeeId || null,
+      employeeName: row.employee?.name || row.employeeName || '—',
+      activeWeek: week,
+      primaryGoal: raw,
+      visitList,
+    })
   }
 
-  const closeEdit = () => setEditModal({ open: false, row: null, activeWeek: 1, primaryGoal: '', visitList: [] })
+  const closeEdit = () => setEditModal({ open: false, planId: null, employeeId: null, employeeName: '', activeWeek: 1, primaryGoal: '', visitList: [] })
 
   const updateVisitRow = (index, field, value) => {
     setEditModal((prev) => ({
@@ -149,10 +160,10 @@ const WeeklyApprovalsTable = ({ year = '', month = '', searchQuery = '' }) => {
   }
 
   const saveEdit = async () => {
-    if (!editModal.row || !isFirebaseConfigured || !db) return
+    if (!editModal.planId || !isFirebaseConfigured || !db) return
     setSaving(true)
     try {
-      const plan = plans.find((p) => p.id === editModal.row.id)
+      const plan = plans.find((p) => p.id === editModal.planId)
       const rawDetails = plan ? normalizeDetails(plan) : []
       const detailsFieldName = plan ? getDetailsFieldName(plan) : 'details'
       const otherWeeksDetails = rawDetails.filter((d) => getWeekOfMonthFromDate(d.date || d.dateVal) !== editModal.activeWeek)
@@ -166,7 +177,7 @@ const WeeklyApprovalsTable = ({ year = '', month = '', searchQuery = '' }) => {
         }))
       const mergedDetails = [...otherWeeksDetails, ...editedAsRaw]
       await setDoc(
-        doc(db, WEEKLY_PLANS_COLLECTION, editModal.row.id),
+        doc(db, WEEKLY_PLANS_COLLECTION, editModal.planId),
         { [detailsFieldName]: mergedDetails, primaryGoal: (editModal.primaryGoal || '').trim() },
         { merge: true }
       )
@@ -224,7 +235,7 @@ const WeeklyApprovalsTable = ({ year = '', month = '', searchQuery = '' }) => {
     const monthLower = (month || '').toLowerCase()
     const yearStr = String(year || '')
 
-    let rows = plans.map((docObj) => {
+    let rawRows = plans.map((docObj) => {
       const employeeName = docObj.employeeName || docObj.employee_name || docObj.employeeEmail || docObj.employee_email || docObj.employeeId || docObj.email || '—'
       const planEmployeeId = docObj.employeeId || docObj.employee_id || null
       const matchedEmployee = planEmployeeId
@@ -300,21 +311,106 @@ const WeeklyApprovalsTable = ({ year = '', month = '', searchQuery = '' }) => {
       }
     })
 
-    if (search) {
-      rows = rows.filter((r) => r.employee.name.toLowerCase().includes(search) || r.details.some((d) => (d.distributor.name || '').toLowerCase().includes(search)))
-    }
     if (monthLower || yearStr) {
-      rows = rows.filter((r) => {
+      rawRows = rawRows.filter((r) => {
         const dStr = (r.date || '').toLowerCase()
         return (!monthLower || dStr.includes(monthLower.slice(0, 3))) && (!yearStr || dStr.includes(yearStr.slice(-2)) || dStr.includes(yearStr))
       })
     }
+
+    // Group multiple plan docs into a single employee row (one card per employee)
+    const grouped = new Map()
+    for (const r of rawRows) {
+      const key = r.employeeId || `name:${(r.employee?.name || '—').trim().toLowerCase()}`
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          id: `emp-${key}`,
+          employeeId: r.employeeId || null,
+          employee: r.employee,
+          date: r.date,
+          primaryGoal: r.primaryGoal,
+          details: [],
+          detailsByWeek: { 1: [], 2: [], 3: [], 4: [] },
+          planIdByWeek: { 1: null, 2: null, 3: null, 4: null },
+          statusByWeek: { 1: null, 2: null, 3: null, 4: null },
+          rowStatus: null,
+        })
+      }
+      const g = grouped.get(key)
+      // date: keep latest lexically/visually if available
+      if (g.date === '—' && r.date !== '—') g.date = r.date
+      // primary goal: sum numeric values across docs (fallback to existing)
+      const toNum = (v) => {
+        const n = parseFloat(String(v || '').replace(/[^\d.]/g, ''))
+        return isNaN(n) ? 0 : n
+      }
+      const sum = toNum(g.primaryGoal) + toNum(r.primaryGoal)
+      g.primaryGoal = sum > 0 ? `${sum} kgs` : (g.primaryGoal || r.primaryGoal)
+
+      // assign doc to any week that has details (used for approve/reject/edit)
+      for (const week of [1, 2, 3, 4]) {
+        const dd = r.detailsByWeek?.[week] || []
+        if (dd.length) {
+          if (!g.planIdByWeek[week]) g.planIdByWeek[week] = r.id
+          if (!g.statusByWeek[week] && r.rowStatus) g.statusByWeek[week] = r.rowStatus
+        }
+      }
+
+      // merge details
+      g.details.push(...(r.details || []))
+      for (const week of [1, 2, 3, 4]) {
+        const dd = r.detailsByWeek?.[week] || []
+        if (dd.length) g.detailsByWeek[week].push(...dd)
+      }
+    }
+
+    let rows = Array.from(grouped.values())
+
+    // Compute overall status badge: rejected if any rejected, approved if all existing week-statuses are approved
+    rows = rows.map((r) => {
+      const statuses = Object.values(r.statusByWeek || {}).filter(Boolean)
+      const overall = statuses.length
+        ? (statuses.some((s) => s === 'rejected') ? 'rejected' : statuses.every((s) => s === 'approved') ? 'approved' : null)
+        : null
+      return { ...r, rowStatus: overall }
+    })
+
+    if (search) {
+      rows = rows.filter((r) => r.employee.name.toLowerCase().includes(search) || (r.details || []).some((d) => (d.distributor.name || '').toLowerCase().includes(search)))
+    }
+
     return rows
   }, [plans, employees, year, month, searchQuery])
 
+  const statusCounts = useMemo(() => {
+    const monthLower = (month || '').toLowerCase()
+    const yearStr = String(year || '')
+    let pending = 0
+    let approved = 0
+    let declined = 0
+    plans.forEach((docObj) => {
+      const dateVal = docObj.date || docObj.weekStart || docObj.timestamp
+      let dateLabel = '—'
+      if (dateVal) {
+        if (typeof dateVal.toDate === 'function') dateLabel = dateVal.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })
+        else if (typeof dateVal === 'string') dateLabel = dateVal
+        else dateLabel = String(dateVal)
+      }
+      const dStr = dateLabel.toLowerCase()
+      const matchesMonth = !monthLower || dStr.includes(monthLower.slice(0, 3))
+      const matchesYear = !yearStr || dStr.includes(yearStr.slice(-2)) || dStr.includes(yearStr)
+      if (!matchesMonth || !matchesYear) return
+      const s = docObj.status || ''
+      if (s === 'approved') approved += 1
+      else if (s === 'rejected') declined += 1
+      else pending += 1
+    })
+    return { pending, approved, declined }
+  }, [plans, year, month])
+
   const assignedDistributorsForModal = useMemo(() => {
-    if (!editModal.row?.employeeId) return []
-    const emp = employees.find((e) => e.id === editModal.row.employeeId)
+    if (!editModal.employeeId) return []
+    const emp = employees.find((e) => e.id === editModal.employeeId)
     if (!emp) return []
     const fromEmployee = (emp.assignedDistributorIds || []).map((id) => distributors.find((d) => d.id === id)).filter(Boolean)
     const fromDistributors = distributors.filter((d) => (d.assignedEmployeeIds || []).includes(emp.id))
@@ -322,7 +418,7 @@ const WeeklyApprovalsTable = ({ year = '', month = '', searchQuery = '' }) => {
     fromEmployee.forEach((d) => byId.set(d.id, d))
     fromDistributors.forEach((d) => byId.set(d.id, d))
     return Array.from(byId.values())
-  }, [editModal.row?.employeeId, employees, distributors])
+  }, [editModal.employeeId, employees, distributors])
 
   const toggleRow = (id) => setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }))
 
@@ -335,7 +431,12 @@ const WeeklyApprovalsTable = ({ year = '', month = '', searchQuery = '' }) => {
               <th>DATE</th>
               <th>EMPLOYEE</th>
               <th>PRIMARY GOAL FOR THE MONTH</th>
-              <th></th>
+              <th className="wa-status-counts-cell">
+                <span className="wa-status-count wa-status-count-pending">PENDING</span>
+                <span className="wa-status-count wa-status-count-approved">APPROVED</span>
+                <span className="wa-status-count wa-status-count-declined">DECLINED</span>
+                <span className="wa-status-header-spacer" aria-hidden="true" />
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -359,13 +460,11 @@ const WeeklyApprovalsTable = ({ year = '', month = '', searchQuery = '' }) => {
                     </div>
                   </td>
                   <td>{row.primaryGoal}</td>
-                  <td>
+                  <td className="wa-row-status-cell">
+                    <span className="wa-status-count wa-status-count-pending">{[1, 2, 3, 4].filter((w) => row.planIdByWeek?.[w] && row.statusByWeek?.[w] !== 'approved' && row.statusByWeek?.[w] !== 'rejected').length}</span>
+                    <span className="wa-status-count wa-status-count-approved">{[1, 2, 3, 4].filter((w) => row.statusByWeek?.[w] === 'approved').length}</span>
+                    <span className="wa-status-count wa-status-count-declined">{[1, 2, 3, 4].filter((w) => row.statusByWeek?.[w] === 'rejected').length}</span>
                     <div className="wa-row-end">
-                      {row.rowStatus && (
-                        <span className={`wa-status-badge wa-status-${row.rowStatus}`}>
-                          {row.rowStatus === 'approved' ? '✓ Approved' : '✕ Rejected'}
-                        </span>
-                      )}
                       <button type="button" className="expand-button" onClick={() => toggleRow(row.id)}>
                         <img src="/drop-down-icon.png" alt="" className={`expand-arrow ${expandedRows[row.id] ? 'expanded' : ''}`} />
                       </button>
@@ -381,17 +480,41 @@ const WeeklyApprovalsTable = ({ year = '', month = '', searchQuery = '' }) => {
                             {[1, 2, 3, 4].map((week) => {
                               const detailsForWeek = row.detailsByWeek?.[week] ?? row.details
                               const hasContent = Array.isArray(detailsForWeek) && detailsForWeek.length > 0
+                              const isApproved = row.statusByWeek?.[week] === 'approved'
+                              const isDeclined = row.statusByWeek?.[week] === 'rejected'
+                              const showDot = hasContent && !isApproved && !isDeclined
                               return (
                                 <button key={week} type="button" className={`week-tab ${activeWeek === week ? 'active' : ''}`} onClick={() => setActiveWeek(week)}>
                                   Week {week}
-                                  {hasContent && <span className="week-tab-dot" aria-hidden="true" />}
+                                  {showDot && <span className="week-tab-dot" aria-hidden="true" />}
                                 </button>
                               )
                             })}
                           </div>
                           <div className="action-buttons">
-                            <button type="button" className={`action-btn approve ${row.rowStatus === 'approved' ? 'action-btn-active-approve' : ''}`} title="Approve" onClick={(e) => { e.stopPropagation(); setRowStatus(row.id, 'approved') }}>✓</button>
-                            <button type="button" className={`action-btn reject ${row.rowStatus === 'rejected' ? 'action-btn-active-reject' : ''}`} title="Reject" onClick={(e) => { e.stopPropagation(); setRowStatus(row.id, 'rejected') }}>✕</button>
+                            {row.statusByWeek?.[activeWeek] && (
+                              <span className={`wa-status-badge wa-status-${row.statusByWeek[activeWeek]}`}>
+                                {row.statusByWeek[activeWeek] === 'approved' ? '✓ Approved' : '✕ Rejected'}
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              className={`action-btn approve ${row.statusByWeek?.[activeWeek] === 'approved' ? 'action-btn-active-approve' : ''}`}
+                              title="Approve"
+                              onClick={(e) => { e.stopPropagation(); setRowStatus(row.planIdByWeek?.[activeWeek], 'approved') }}
+                              disabled={!row.planIdByWeek?.[activeWeek]}
+                            >
+                              ✓
+                            </button>
+                            <button
+                              type="button"
+                              className={`action-btn reject ${row.statusByWeek?.[activeWeek] === 'rejected' ? 'action-btn-active-reject' : ''}`}
+                              title="Reject"
+                              onClick={(e) => { e.stopPropagation(); setRowStatus(row.planIdByWeek?.[activeWeek], 'rejected') }}
+                              disabled={!row.planIdByWeek?.[activeWeek]}
+                            >
+                              ✕
+                            </button>
                             <button type="button" className="action-btn action-btn-pen" title="Edit" onClick={(e) => { e.stopPropagation(); openEdit(row, activeWeek) }}>
                               <img src="/pen-icon.png" alt="Edit" className="pen-icon-img" />
                             </button>
@@ -446,7 +569,7 @@ const WeeklyApprovalsTable = ({ year = '', month = '', searchQuery = '' }) => {
       {editModal.open && (
         <div className="wa-modal-overlay" onClick={closeEdit}>
           <div className="wa-modal wa-modal-edit-visits" onClick={(e) => e.stopPropagation()}>
-            <h3 className="wa-modal-title">Edit — {editModal.row?.employee?.name} (Week {editModal.activeWeek})</h3>
+            <h3 className="wa-modal-title">Edit — {editModal.employeeName} (Week {editModal.activeWeek})</h3>
             <p className="wa-modal-subtitle">Which date the employee is visiting which distributor and which bit. Edit the list below.</p>
             <label className="wa-modal-label">
               Primary Goal for the month (kgs)

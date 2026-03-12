@@ -216,23 +216,25 @@ const DistributorTable = ({ distributors: firestoreDistributors = [], employees 
                       </button>
                     </div>
                   </td>
-                  <td>
+                  <td className="distributor-notes-cell">
                     <button
                       type="button"
-                      className="distributor-notes-dropdown-btn"
+                      className="distributor-notes-preview-btn"
                       onClick={(e) => {
                         e.stopPropagation()
                         setExpandedNotesId(distributor.docId)
                         setNoteDraft(distributor.note || '')
                       }}
-                      title="Notes"
+                      title={distributor.note ? 'Click to view or edit note' : 'Add note'}
                       aria-label="Open notes"
                     >
-                      <img
-                        src="/drop_down_icon.png"
-                        alt=""
-                        className="distributor-notes-dropdown-icon"
-                      />
+                      <span className={`distributor-notes-preview-box ${distributor.note ? 'has-note' : ''}`}>
+                        {distributor.note
+                          ? (distributor.note.length > 40
+                              ? distributor.note.trim().slice(0, 40) + '…'
+                              : distributor.note.trim())
+                          : '—'}
+                      </span>
                     </button>
                   </td>
                 </tr>

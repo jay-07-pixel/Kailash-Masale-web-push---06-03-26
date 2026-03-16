@@ -37,8 +37,8 @@ Or with gcloud:
 gcloud storage buckets update gs://kailash-masale.firebasestorage.app --cors-file=storage-cors.json
 ```
 
-## 4. Add your production domain
+## 4. Production domain (Netlify)
 
-Edit `storage-cors.json`: replace `https://yourdomain.com` with your real site URL (e.g. `https://yourapp.vercel.app`), then run the same command again.
+`storage-cors.json` already includes `https://kailashm.netlify.app`. If you add another domain (e.g. custom domain), add it to the `"origin"` array in `storage-cors.json`, then run the same command again.
 
-After this, the Download button should work from localhost and your deployed site.
+After you apply CORS (step 3), the Download button will work from localhost and from https://kailashm.netlify.app. Until then, the app will open the file in a new tab so you can still view/save it.

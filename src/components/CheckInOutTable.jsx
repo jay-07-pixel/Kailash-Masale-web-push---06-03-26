@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+ import React, { useState } from 'react'
 import './CheckInOutTable.css'
 
 const isEmpty = (v) => v == null || v === '' || v === '—'
@@ -207,11 +207,23 @@ const CheckInOutTable = ({ tableData = [] }) => {
                       </div>
                       <div className="detail-panel-section">
                         <h4 className="detail-panel-title">Check-in location</h4>
-                        <p className="detail-panel-content">{row.checkInLocation ?? '—'}</p>
+                        <p className="detail-panel-content">
+                          {row.checkInMapsLink ? (
+                            <a href={row.checkInMapsLink} target="_blank" rel="noopener noreferrer" className="checkinout-map-link">View on Google Maps</a>
+                          ) : (
+                            row.checkInLocation ?? '—'
+                          )}
+                        </p>
                       </div>
                       <div className="detail-panel-section">
                         <h4 className="detail-panel-title">Check-out location</h4>
-                        <p className="detail-panel-content">{row.checkOutLocation ?? '—'}</p>
+                        <p className="detail-panel-content">
+                          {row.checkOutMapsLink ? (
+                            <a href={row.checkOutMapsLink} target="_blank" rel="noopener noreferrer" className="checkinout-map-link">View on Google Maps</a>
+                          ) : (
+                            row.checkOutLocation ?? '—'
+                          )}
+                        </p>
                       </div>
                     </div>
                   </td>

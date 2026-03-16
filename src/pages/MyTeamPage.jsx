@@ -192,7 +192,7 @@ function MyTeamPage() {
   )
 
   const addOneTeamMember = async (memberId) => {
-    if (!selectedEmployee || !memberId || !db || selectedEmployee.id?.startsWith('local-') || !isManager(selectedEmployee)) return
+    if (!selectedEmployee || !memberId || !db || selectedEmployee.id?.startsWith('local-')) return
     if ((selectedEmployee.assignedTeamMemberIds || []).includes(memberId)) return
     setAssignTeamMemberError(null)
     setAssignTeamMemberSaving(true)
@@ -215,7 +215,7 @@ function MyTeamPage() {
   }
 
   const handleRemoveTeamMember = async (memberId) => {
-    if (!selectedEmployee || !db || selectedEmployee.id?.startsWith('local-') || !isManager(selectedEmployee)) return
+    if (!selectedEmployee || !db || selectedEmployee.id?.startsWith('local-')) return
     try {
       await updateDoc(doc(db, EMPLOYEES_COLLECTION, selectedEmployee.id), {
         assignedTeamMemberIds: arrayRemove(memberId),
@@ -559,48 +559,44 @@ function MyTeamPage() {
                         <div className="my-team-detail-item"><span className="my-team-detail-label">Salary</span><span className="my-team-detail-value my-team-detail-value-accent">{selectedEmployee.salary}</span></div>
                         <h4 className="my-team-detail-section-title my-team-subsection-title">Head Quarter</h4>
                         <div className="my-team-detail-item"><span className="my-team-detail-label">Place</span><span className="my-team-detail-value">{selectedEmployee.headQuarter || '—'}</span></div>
-                        {isManager(selectedEmployee) && (
-                          <>
-                            <h4 className="my-team-detail-section-title my-team-subsection-title">Team Members</h4>
-                            <div className="my-team-detail-item my-team-detail-item-locations">
-                              <span className="my-team-detail-label">Assigned team members</span>
-                              <span className="my-team-detail-value">
-                                {(selectedEmployee.assignedTeamMemberIds?.length > 0) ? (
-                                  <ul className="my-team-location-tags">
-                                    {(selectedEmployee.assignedTeamMemberIds || []).map((empId) => {
-                                      const emp = employees.find((e) => e.id === empId)
-                                      const name = emp ? `${emp.salesPersonName}${emp.designation ? ` (${emp.designation})` : ''}` : '—'
-                                      return (
-                                        <li key={empId} className="my-team-location-tag">
-                                          <span>{name}</span>
-                                          {db && !selectedEmployee.id?.startsWith('local-') && (
-                                            <button
-                                              type="button"
-                                              className="my-team-location-remove"
-                                              onClick={(e) => { e.stopPropagation(); handleRemoveTeamMember(empId) }}
-                                              aria-label={`Remove ${name}`}
-                                            >
-                                              ×
-                                            </button>
-                                          )}
-                                        </li>
-                                      )
-                                    })}
-                                  </ul>
-                                ) : '—'}
-                                {db && !selectedEmployee.id?.startsWith('local-') && (
-                                  <button
-                                    type="button"
-                                    className="my-team-assign-location-btn"
-                                    onClick={() => setAssignTeamModal(true)}
-                                  >
-                                    + Assign team member
-                                  </button>
-                                )}
-                              </span>
-                            </div>
-                          </>
-                        )}
+                        <h4 className="my-team-detail-section-title my-team-subsection-title">Team Members</h4>
+                        <div className="my-team-detail-item my-team-detail-item-locations">
+                          <span className="my-team-detail-label">Assigned team members</span>
+                          <span className="my-team-detail-value">
+                            {(selectedEmployee.assignedTeamMemberIds?.length > 0) ? (
+                              <ul className="my-team-location-tags">
+                                {(selectedEmployee.assignedTeamMemberIds || []).map((empId) => {
+                                  const emp = employees.find((e) => e.id === empId)
+                                  const name = emp ? `${emp.salesPersonName}${emp.designation ? ` (${emp.designation})` : ''}` : '—'
+                                  return (
+                                    <li key={empId} className="my-team-location-tag">
+                                      <span>{name}</span>
+                                      {db && !selectedEmployee.id?.startsWith('local-') && (
+                                        <button
+                                          type="button"
+                                          className="my-team-location-remove"
+                                          onClick={(e) => { e.stopPropagation(); handleRemoveTeamMember(empId) }}
+                                          aria-label={`Remove ${name}`}
+                                        >
+                                          ×
+                                        </button>
+                                      )}
+                                    </li>
+                                  )
+                                })}
+                              </ul>
+                            ) : '—'}
+                            {db && !selectedEmployee.id?.startsWith('local-') && (
+                              <button
+                                type="button"
+                                className="my-team-assign-location-btn"
+                                onClick={() => setAssignTeamModal(true)}
+                              >
+                                + Assign team member
+                              </button>
+                            )}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <div className="my-team-detail-section">
@@ -635,8 +631,8 @@ function MyTeamPage() {
         </div>
       )}
 
-      {/* Assign team member modal (managers only) */}
-      {assignTeamModal && selectedEmployee && isManager(selectedEmployee) && (
+      {/* Assign team member modal */}
+      {assignTeamModal && selectedEmployee && (
         <div className="my-team-modal-overlay" onClick={closeAssignTeamModal} role="dialog" aria-modal="true" aria-labelledby="assign-team-title">
           <div className="my-team-modal-content my-team-assign-team-modal" onClick={(e) => e.stopPropagation()}>
             <div className="my-team-assign-team-header">

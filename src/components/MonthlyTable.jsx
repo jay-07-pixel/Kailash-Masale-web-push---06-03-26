@@ -211,7 +211,40 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
     }
     try {
       await setDoc(doc(db, MONTHLY_DATA_COLLECTION, docId), payload, { merge: true })
-      // onSnapshot listener automatically refreshes monthlyDataList
+      // Also update monthly_data so targetKg (and workingDays, incentive) stay in sync for this distributor
+      const monthNum = MONTH_LABELS.indexOf(month) + 1
+      const yr = Number(year)
+      const monthlyData2Doc = monthlyData2.find(
+        (m) =>
+          m.employeeId === row.id &&
+          Number(m.month ?? m.Month) === monthNum &&
+          (m.year == null || Number(m.year) === yr)
+      )
+      if (monthlyData2Doc?.id) {
+        const rows = [...(monthlyData2Doc.rows || [])]
+        const rowIndex = rows.findIndex((r) => (r.distributorId || r.distributor_id) === selectedDistributorId)
+        const targetKgVal = Number(form.target) || 0
+        const workingDaysVal = Number(form.workingDays) || 0
+        const incentiveVal = form.incentive === '' || form.incentive === '—' ? '—' : (Number(form.incentive) || form.incentive)
+        const updatedRow = {
+          ...(rowIndex >= 0 ? rows[rowIndex] : {}),
+          distributorId: selectedDistributorId,
+          targetKg: targetKgVal,
+          workingDays: workingDaysVal,
+          incentive: incentiveVal,
+        }
+        if (rowIndex >= 0) {
+          rows[rowIndex] = updatedRow
+        } else {
+          rows.push(updatedRow)
+        }
+        const { id: _docId, ...docData } = monthlyData2Doc
+        await setDoc(
+          doc(db, MONTHLY_DATA2_COLLECTION, monthlyData2Doc.id),
+          { ...docData, rows },
+          { merge: true }
+        )
+      }
       setEditModal({ open: false, row: null, form: null, selectedDistributorId: null })
     } catch (e) {
       console.error('saveEdit failed:', e)
@@ -723,6 +756,16 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
                         min={0}
                         value={editModal.form.workingDays}
                         onChange={(e) => updateEditForm('workingDays', e.target.value)}
+                      />
+                    </label>
+                    <label className="monthly-edit-modal-label-inline">
+                      Target
+                      <input
+                        type="number"
+                        min={0}
+                        placeholder="e.g. kg"
+                        value={editModal.form.target}
+                        onChange={(e) => updateEditForm('target', e.target.value)}
                       />
                     </label>
                     <label className="monthly-edit-modal-label-inline">

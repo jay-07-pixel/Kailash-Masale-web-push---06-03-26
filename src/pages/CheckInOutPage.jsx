@@ -235,6 +235,8 @@ function CheckInOutPage() {
       }
       const checkInLocation = formatLoc(ci, 'checkIn') ?? formatLoc(co, 'checkIn')
       const checkOutLocation = co ? (formatLoc(co, 'checkOut') || '—') : '—'
+      const checkInMapsLink = ci.checkInMapsLink ?? ci.check_in_maps_link ?? ''
+      const checkOutMapsLink = co?.checkOutMapsLink ?? co?.check_out_maps_link ?? ''
       return {
         id: ci.id,
         date: formatDateLabel(ci.timestamp),
@@ -251,6 +253,8 @@ function CheckInOutPage() {
         notes: notesVal || '',
         checkInLocation: checkInLocation || '—',
         checkOutLocation: checkOutLocation || '—',
+        checkInMapsLink: checkInMapsLink && typeof checkInMapsLink === 'string' ? checkInMapsLink.trim() : '',
+        checkOutMapsLink: checkOutMapsLink && typeof checkOutMapsLink === 'string' ? checkOutMapsLink.trim() : '',
         isOnLeave: !!ci.isOnLeave,
         checkInTs: ci.timestamp,
         checkOutTs: co?.timestamp,
@@ -274,6 +278,8 @@ function CheckInOutPage() {
       notes: '',
       checkInLocation: '—',
       checkOutLocation: '—',
+      checkInMapsLink: '',
+      checkOutMapsLink: '',
       isOnLeave: false,
       checkInTs: null,
       checkOutTs: null,

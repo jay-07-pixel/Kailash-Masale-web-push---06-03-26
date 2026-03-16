@@ -192,3 +192,12 @@
   color: #334155;
   line-height: 1.5;
 }
+
+.checkinout-map-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+}
+.checkinout-map-link:hover {
+  text-decoration: underline;
+}

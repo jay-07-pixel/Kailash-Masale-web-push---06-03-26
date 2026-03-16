@@ -397,11 +397,6 @@ const OrdersTable = ({ searchQuery = '', year, month }) => {
                 </td>
                 <td>
                   <div className="employee-cell">
-                    <img
-                      src={order.employee.avatar}
-                      alt={order.employee.name}
-                      className="employee-avatar"
-                    />
                     <div className="employee-info">
                       <div className="employee-name">{order.employee.name}</div>
                       <div className="employee-role">{order.employee.role}</div>

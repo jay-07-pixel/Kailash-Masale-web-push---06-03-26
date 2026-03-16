@@ -233,15 +233,10 @@ const StockSheetsTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =>
       } catch (_) {}
     }
 
-    // 3) Fallback: trigger download via anchor (browser may still open in new tab for some cross-origin URLs)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.rel = 'noopener noreferrer'
-    a.style.display = 'none'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+    // 3) Fallback when CORS blocks fetch/getBlob (e.g. deployed site): open in new tab so user can view/save
+    try {
+      window.open(url, '_blank', 'noopener,noreferrer')
+    } catch (_) {}
   }
 
   return (

@@ -41,9 +41,33 @@ const distributorInitial = (name) => {
   return name.slice(0, 2).toUpperCase()
 }
 
-/** Group order.orders by order number. Uses Firebase orderNumber when present and varied; otherwise derives Order 1/2/... by distributor (first occurrence) so "another distributor" gets Order 2. */
+/** Parse date string (dd-mm-yyyy or dd/mm/yyyy) to timestamp for sorting. */
+function getDateSortKey(dateStr) {
+  if (!dateStr || dateStr === '—') return 0
+  const d = parseOrderDateToObj(String(dateStr).replace(/\//g, '-'))
+  return d ? d.getTime() : 0
+}
+
+/** Group order.orders by date when dates differ; otherwise by order number. Sub-orders with same date stay in one Order; different dates get Order 1, Order 2, etc. */
 const getOrderGroups = (order) => {
   const orders = order.orders || []
+  const allDateKeys = [...new Set(orders.map((o) => o.date || '—'))]
+  const hasMultipleDates = allDateKeys.length > 1
+
+  if (hasMultipleDates) {
+    const byDate = {}
+    orders.forEach((line) => {
+      const dateKey = line.date || '—'
+      if (!byDate[dateKey]) byDate[dateKey] = []
+      byDate[dateKey].push(line)
+    })
+    const sortedDates = [...allDateKeys].sort((a, b) => getDateSortKey(a) - getDateSortKey(b))
+    return sortedDates.map((dateKey, idx) => ({
+      orderNumber: idx + 1,
+      lines: byDate[dateKey] || [],
+    }))
+  }
+
   const firebaseNumbers = new Set(orders.map((o) => o.orderNumber).filter((n) => n != null))
   const useFirebaseOrderNumber = firebaseNumbers.size > 1
   const byNum = {}

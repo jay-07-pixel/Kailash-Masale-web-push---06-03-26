@@ -10,6 +10,40 @@ const TASKS_COLLECTION = 'tasks'
 const CHECK_INS_COLLECTION = 'check_ins'
 const CHECK_OUTS_COLLECTION = 'check_outs'
 
+function toDate(v) {
+  if (!v) return null
+  if (v && typeof v.toDate === 'function') return v.toDate()
+  if (v instanceof Date) return v
+  const d = new Date(v)
+  return isNaN(d.getTime()) ? null : d
+}
+
+function getTodayDateStr() {
+  const d = new Date()
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+}
+
+function getDocDateStr(doc) {
+  const d = toDate(doc.timestamp)
+  if (d) return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+  if (doc.date) {
+    const s = String(doc.date).trim()
+    const parts = s.split(/[-/]/).map((p) => p.trim())
+    if (parts.length === 3) {
+      const y = parts.find((x) => x.length === 4)
+      const dm = parts.filter((x) => x.length !== 4)
+      if (y) {
+        const yearFirst = parts[0] === y
+        const m = yearFirst ? (dm[0] || '01') : (dm[1] || '01')
+        const day = yearFirst ? (dm[1] || '01') : (dm[0] || '01')
+        return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      }
+      return `${parts[2]}-${String(parts[1]).padStart(2, '0')}-${String(parts[0]).padStart(2, '0')}`
+    }
+  }
+  return null
+}
+
 
 
 /** Order groups from docs (same logic as OrdersSummaryCards) for counting whole orders */
@@ -104,8 +138,9 @@ const OverviewCards = () => {
 
   const cards = useMemo(() => {
     const ongoingTasks = tasks.filter((t) => (t.status || 'pending') !== 'resolved').length
-    const checkInsTotal = checkIns.length
-    const checkOutsTotal = checkOuts.length
+    const todayStr = getTodayDateStr()
+    const checkInsToday = checkIns.filter((ci) => getDocDateStr(ci) === todayStr).length
+    const checkOutsToday = checkOuts.filter((co) => getDocDateStr(co) === todayStr).length
     return [
       {
         icon: '👥',
@@ -131,7 +166,7 @@ const OverviewCards = () => {
       {
         icon: '⏰',
         title: 'Check-ins / Check-Outs',
-        value: `${checkInsTotal} / ${checkOutsTotal}`,
+        value: `${checkInsToday} / ${checkOutsToday}`,
         change: 'Live',
         changeType: 'neutral',
       },

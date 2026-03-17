@@ -11,6 +11,7 @@ function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [year, setYear] = useState(() => new Date().getFullYear())
   const [month, setMonth] = useState(() => MONTH_OPTIONS[new Date().getMonth()])
+  const [statusFilter, setStatusFilter] = useState('All')
 
   return (
     <div className="main-content">
@@ -25,8 +26,10 @@ function OrdersPage() {
             setYear={setYear}
             month={month}
             setMonth={setMonth}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
           />
-          <OrdersTable searchQuery={searchQuery} year={year} month={month} />
+          <OrdersTable searchQuery={searchQuery} year={year} month={month} statusFilter={statusFilter} />
         </div>
       </div>
     </div>

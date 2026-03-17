@@ -93,7 +93,7 @@ function getOrderDate(doc) {
   return null
 }
 
-const OrdersTable = ({ searchQuery = '', year, month }) => {
+const OrdersTable = ({ searchQuery = '', year, month, statusFilter = 'All' }) => {
   const [firestoreOrders, setFirestoreOrders] = useState([])
   const [expandedRows, setExpandedRows] = useState({})
   const [activeOrderTab, setActiveOrderTab] = useState({})
@@ -114,10 +114,14 @@ const OrdersTable = ({ searchQuery = '', year, month }) => {
   }
 
   const toggleRow = (id) => {
-    setExpandedRows((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }))
+    setExpandedRows((prev) => {
+      const isCurrentlyExpanded = prev[id]
+      if (isCurrentlyExpanded) {
+        return { ...prev, [id]: false }
+      }
+      // Opening this row — close all others, keep only this one open
+      return { [id]: true }
+    })
   }
 
   const setOrderStatus = (rowId, orderIndex, status, declineReasonValue) => {
@@ -327,17 +331,40 @@ const OrdersTable = ({ searchQuery = '', year, month }) => {
     return rows
   }, [firestoreOrders, year, month])
 
-  const filteredOrders = useMemo(() => {
-    const q = (searchQuery || '').toLowerCase().trim()
-    if (!q) return ordersData
-    return ordersData.filter((order) => {
-      const empName = (order.employee?.name || '').toLowerCase()
-      const empRole = (order.employee?.role || '').toLowerCase()
-      const distName = (order.distributor?.name || '').toLowerCase()
-      const distLocation = (order.distributor?.location || '').toLowerCase()
-      return empName.includes(q) || empRole.includes(q) || distName.includes(q) || distLocation.includes(q)
+  /** Overall order status: Declined if any group declined, Placed if all groups placed, else Pending */
+  const getOrderOverallStatus = (order, statusesMap) => {
+    const orders = order.orders || []
+    if (orders.length === 0) return (order.status && ['Pending', 'Placed', 'Declined'].includes(order.status)) ? order.status : 'Pending'
+    const groups = getOrderGroups(order)
+    const statuses = statusesMap[order.id] || {}
+    const groupStatuses = groups.map((g) => {
+      const lineStatuses = g.lines.map((line) => (statuses[line.orderIndex]?.status) || (line?.status) || 'Pending')
+      if (lineStatuses.some((s) => s === 'Declined')) return 'Declined'
+      if (lineStatuses.every((s) => s === 'Placed')) return 'Placed'
+      return 'Pending'
     })
-  }, [ordersData, searchQuery])
+    if (groupStatuses.some((s) => s === 'Declined')) return 'Declined'
+    if (groupStatuses.every((s) => s === 'Placed')) return 'Placed'
+    return 'Pending'
+  }
+
+  const filteredOrders = useMemo(() => {
+    let result = ordersData
+    const q = (searchQuery || '').toLowerCase().trim()
+    if (q) {
+      result = result.filter((order) => {
+        const empName = (order.employee?.name || '').toLowerCase()
+        const empRole = (order.employee?.role || '').toLowerCase()
+        const distName = (order.distributor?.name || '').toLowerCase()
+        const distLocation = (order.distributor?.location || '').toLowerCase()
+        return empName.includes(q) || empRole.includes(q) || distName.includes(q) || distLocation.includes(q)
+      })
+    }
+    if (statusFilter && statusFilter !== 'All') {
+      result = result.filter((order) => getOrderOverallStatus(order, orderStatuses) === statusFilter)
+    }
+    return result
+  }, [ordersData, searchQuery, statusFilter, orderStatuses])
 
   return (
     <div className="orders-table-container">
@@ -366,7 +393,9 @@ const OrdersTable = ({ searchQuery = '', year, month }) => {
                     ? (isFirebaseConfigured && db
                         ? 'No orders yet. Orders from Firebase will appear here.'
                         : 'Connect Firebase to load orders.')
-                    : 'No orders match your search.'}
+                    : statusFilter && statusFilter !== 'All'
+                      ? `No ${statusFilter} orders match your filters.`
+                      : 'No orders match your search.'}
                 </td>
               </tr>
             ) : (
@@ -491,7 +520,6 @@ const OrdersTable = ({ searchQuery = '', year, month }) => {
                               <th>SKU</th>
                               <th>KG</th>
                               <th>SCHEME</th>
-                              <th>DISTRIBUTOR</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -501,7 +529,6 @@ const OrdersTable = ({ searchQuery = '', year, month }) => {
                                 <td>{line.sku}</td>
                                 <td className="kg-cell">{line.kg}</td>
                                 <td>{line.scheme}</td>
-                                <td>{line.distributor || '—'}</td>
                               </tr>
                             ))}
                           </tbody>

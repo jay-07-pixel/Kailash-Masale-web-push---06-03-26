@@ -524,6 +524,7 @@
 .orders-detail-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   background-color: white;
   border-radius: 8px;
   overflow: hidden;
@@ -544,16 +545,23 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   vertical-align: middle;
+  box-sizing: border-box;
 }
 
-/* Align headers: DATE(1), SKU(2) left; KG(3) right; SCHEME(4), DISTRIBUTOR(5) center */
-.orders-detail-table th:nth-child(3) {
-  text-align: right;
+/* Equal column widths for uniform spacing between DATE, SKU, KG, SCHEME */
+.orders-detail-table th:nth-child(1),
+.orders-detail-table th:nth-child(2),
+.orders-detail-table th:nth-child(3),
+.orders-detail-table th:nth-child(4) {
+  width: 25%;
 }
 
-.orders-detail-table th:nth-child(4),
-.orders-detail-table th:nth-child(5) {
-  text-align: center;
+/* Align headers: DATE, SKU, KG, SCHEME all left */
+.orders-detail-table th:nth-child(1),
+.orders-detail-table th:nth-child(2),
+.orders-detail-table th:nth-child(3),
+.orders-detail-table th:nth-child(4) {
+  text-align: left;
 }
 
 .orders-detail-table td {
@@ -561,23 +569,15 @@
   font-size: 13px;
   color: #2d3748;
   border-bottom: 1px solid #e2e8f0;
-  text-align: left;
   vertical-align: middle;
 }
 
-/* Match cell alignment to headers */
+/* Match cell alignment to headers - all left */
 .orders-detail-table td:nth-child(1),
-.orders-detail-table td:nth-child(2) {
+.orders-detail-table td:nth-child(2),
+.orders-detail-table td:nth-child(3),
+.orders-detail-table td:nth-child(4) {
   text-align: left;
-}
-
-.orders-detail-table td:nth-child(3) {
-  text-align: right;
-}
-
-.orders-detail-table td:nth-child(4),
-.orders-detail-table td:nth-child(5) {
-  text-align: center;
 }
 
 .orders-detail-table td.kg-cell {

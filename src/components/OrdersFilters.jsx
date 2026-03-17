@@ -13,7 +13,7 @@ const YEAR_OPTIONS = (() => {
   return [current, current - 1, current - 2]
 })()
 
-const OrdersFilters = ({ searchQuery = '', setSearchQuery, year: yearProp, setYear: setYearProp, month: monthProp, setMonth: setMonthProp }) => {
+const OrdersFilters = ({ searchQuery = '', setSearchQuery, year: yearProp, setYear: setYearProp, month: monthProp, setMonth: setMonthProp, statusFilter = 'All', setStatusFilter }) => {
   const [internalYear, setInternalYear] = useState(() => getDefaultYear())
   const [internalMonth, setInternalMonth] = useState(() => getDefaultMonth())
   const year = yearProp !== undefined ? yearProp : internalYear
@@ -23,7 +23,9 @@ const OrdersFilters = ({ searchQuery = '', setSearchQuery, year: yearProp, setYe
   const [internalSearch, setInternalSearch] = useState('')
   const q = setSearchQuery != null ? searchQuery : internalSearch
   const setQ = setSearchQuery != null ? setSearchQuery : setInternalSearch
-  const [activeTab, setActiveTab] = useState('All')
+  const [internalStatusFilter, setInternalStatusFilter] = useState('All')
+  const activeTab = setStatusFilter != null ? statusFilter : internalStatusFilter
+  const setActiveTab = setStatusFilter != null ? setStatusFilter : setInternalStatusFilter
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isManageSKUsOpen, setIsManageSKUsOpen] = useState(false)
 

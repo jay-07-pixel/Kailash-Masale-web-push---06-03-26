@@ -6,7 +6,7 @@ function getDateFromCreatedAt(createdAt) {
   if (typeof createdAt.toDate === 'function') return createdAt.toDate()
   if (createdAt instanceof Date) return createdAt
   const t = typeof createdAt?.seconds === 'number' ? createdAt.seconds * 1000 : Date.parse(createdAt)
-  return isNaN(t) ? null : new Date(t)
+  return isNaN(t) ? null : new Date(t) 
 }
 
 function getMonthTrend(distributors) {

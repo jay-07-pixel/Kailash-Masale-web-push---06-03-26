@@ -209,7 +209,7 @@ const CheckInOutTable = ({ tableData = [] }) => {
                         <h4 className="detail-panel-title">Check-in location</h4>
                         <p className="detail-panel-content">
                           {row.checkInMapsLink ? (
-                            <a href={row.checkInMapsLink} target="_blank" rel="noopener noreferrer" className="checkinout-map-link">View on Google Maps</a>
+                            <><a href={row.checkInMapsLink} target="_blank" rel="noopener noreferrer" className="checkinout-map-link">View on Google Maps</a> / {row.checkInLocation || '—'}</>
                           ) : (
                             row.checkInLocation ?? '—'
                           )}
@@ -219,7 +219,7 @@ const CheckInOutTable = ({ tableData = [] }) => {
                         <h4 className="detail-panel-title">Check-out location</h4>
                         <p className="detail-panel-content">
                           {row.checkOutMapsLink ? (
-                            <a href={row.checkOutMapsLink} target="_blank" rel="noopener noreferrer" className="checkinout-map-link">View on Google Maps</a>
+                            <><a href={row.checkOutMapsLink} target="_blank" rel="noopener noreferrer" className="checkinout-map-link">View on Google Maps</a> / {row.checkOutLocation || '—'}</>
                           ) : (
                             row.checkOutLocation ?? '—'
                           )}

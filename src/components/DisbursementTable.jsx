@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { collection, onSnapshot } from 'firebase/firestore'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import { collection, onSnapshot, doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
 import './DisbursementTable.css'
 
-const CHECK_INS_COLLECTION    = 'check_ins'
+const CHECK_INS_COLLECTION     = 'check_ins'
 const CHECK_OUTS_COLLECTION   = 'check_outs'
 const EMPLOYEES_COLLECTION    = 'employees'
 const DISTRIBUTORS_COLLECTION = 'distributors'
+const MASTER_SHEETS_COLLECTION = 'master_sheets'
+const LOCATIONS_COLLECTION    = 'locations'
+const EXPENDITURE_COLLECTION  = 'Expenditure'
 
 const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
@@ -30,6 +33,15 @@ function toN(v) {
   return isNaN(n) ? 0 : n
 }
 
+function haversineMeters(lat1, lng1, lat2, lng2) {
+  const R = 6371000
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLng = ((lng2 - lng1) * Math.PI) / 180
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
 function fmt(v) {
   return v > 0 ? v : '—'
 }
@@ -40,37 +52,145 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
   const [checkOuts, setCheckOuts]       = useState([])
   const [employees, setEmployees]       = useState([])
   const [distributors, setDistributors] = useState([])
+  const [masterSheets, setMasterSheets] = useState([])
+  const [locationList, setLocationList] = useState([])
 
   useEffect(() => {
     if (!isFirebaseConfigured || !db) return
-    const u1 = onSnapshot(collection(db, CHECK_INS_COLLECTION),    s => setCheckIns(s.docs.map(d => ({ id: d.id, ...d.data() }))))
-    const u2 = onSnapshot(collection(db, CHECK_OUTS_COLLECTION),   s => setCheckOuts(s.docs.map(d => ({ id: d.id, ...d.data() }))))
-    const u3 = onSnapshot(collection(db, EMPLOYEES_COLLECTION),    s => setEmployees(s.docs.map(d => ({ id: d.id, ...d.data() }))))
+    const u1 = onSnapshot(collection(db, CHECK_INS_COLLECTION),     s => setCheckIns(s.docs.map(d => ({ id: d.id, ...d.data() }))))
+    const u2 = onSnapshot(collection(db, CHECK_OUTS_COLLECTION),    s => setCheckOuts(s.docs.map(d => ({ id: d.id, ...d.data() }))))
+    const u3 = onSnapshot(collection(db, EMPLOYEES_COLLECTION),     s => setEmployees(s.docs.map(d => ({ id: d.id, ...d.data() }))))
     const u4 = onSnapshot(collection(db, DISTRIBUTORS_COLLECTION), s => setDistributors(s.docs.map(d => ({ id: d.id, ...d.data() }))))
-    return () => { u1(); u2(); u3(); u4() }
+    const u5 = onSnapshot(collection(db, MASTER_SHEETS_COLLECTION), s => setMasterSheets(s.docs.map(d => ({ id: d.id, ...d.data() }))))
+    const u6 = onSnapshot(collection(db, LOCATIONS_COLLECTION),    s => setLocationList(s.docs.map(d => ({ id: d.id, ...d.data() }))))
+    return () => { u1(); u2(); u3(); u4(); u5(); u6() }
   }, [])
 
   const toggleRow = (id) => setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }))
 
+  // Build master sheet lookup: employeeId → rows [{ from, to, oneWayTA, da, nighthault }]
+  const masterSheetLookup = useMemo(() => {
+    const lookup = {}
+    masterSheets.forEach(doc => {
+      lookup[doc.id] = Array.isArray(doc.rows) ? doc.rows : []
+    })
+    return lookup
+  }, [masterSheets])
+
+  // Find matching master sheet row for route From=Nagpur to destination; returns row or null
+  const getMasterRowForRoute = (rows, toDestination) => {
+    if (!rows?.length || !toDestination) return null
+    const toNorm = String(toDestination).trim().toLowerCase()
+    if (!toNorm) return null
+    return rows.find(r => {
+      const from = String(r.from || '').trim().toLowerCase()
+      const to = String(r.to || '').trim().toLowerCase()
+      if (from !== 'nagpur') return false
+      return to === toNorm || to.includes(toNorm) || toNorm.includes(to)
+    }) || null
+  }
+
+  const getOneWayTAForRoute = (rows, toDestination) => {
+    const row = getMasterRowForRoute(rows, toDestination)
+    const ta = row?.oneWayTA
+    return ta != null && ta !== '' ? Number(ta) : null
+  }
+
+  const getNighthaultForRoute = (rows, toDestination) => {
+    const row = getMasterRowForRoute(rows, toDestination)
+    const nh = row?.nighthault
+    return nh != null && nh !== '' ? Number(nh) : null
+  }
+
   // Build bits lookup: normalised date-key → empKey → distKey → bits string
-  // key format: "dd/mm/yyyy" (normalised from the date field)
   const bitsLookup = useMemo(() => {
     const lookup = {}
     checkIns.forEach(ci => {
-      const empKey  = ci.employeeId || ci.employeeEmail || ci.employee_email || ''
-      const distKey = ci.distributorId || ci.distributor || ci.distributorName || ''
-      const bits    = ci.bits || ci.bitName || ci.bit || ''
+      const empKeys = [ci.employeeId, ci.employeeEmail, ci.employee_email].filter(Boolean)
+      const distKeys = [ci.distributorId, ci.distributor, ci.distributorName].filter(Boolean)
+      const bits = ci.bits || ci.bitName || ci.bit || ''
       const dateRaw = ci.date || ci.timestamp
-      if (!empKey || !bits || !dateRaw) return
+      if (empKeys.length === 0 || distKeys.length === 0 || !bits || !dateRaw) return
       const d = parseDate(dateRaw)
       if (!d) return
       const dateKey = `${d.getDate()}/${d.getMonth()}/${d.getFullYear()}`
       if (!lookup[dateKey]) lookup[dateKey] = {}
-      if (!lookup[dateKey][empKey]) lookup[dateKey][empKey] = {}
-      lookup[dateKey][empKey][distKey] = bits
+      empKeys.forEach(ek => {
+        if (!lookup[dateKey][ek]) lookup[dateKey][ek] = {}
+        distKeys.forEach(dk => { lookup[dateKey][ek][dk] = bits })
+      })
     })
     return lookup
   }, [checkIns])
+
+  // Resolve raw location (string or coords) to place name for TA route matching
+  const resolvePlaceName = useCallback((raw) => {
+    if (!raw) return ''
+    const parseCoord = (v) => {
+      if (v == null) return null
+      if (typeof v === 'number' && !isNaN(v)) return v
+      if (typeof v === 'object' && (v.latitude != null || v.lat != null)) return Number(v.latitude ?? v.lat)
+      if (typeof v === 'object' && (v.longitude != null || v.lng != null)) return Number(v.longitude ?? v.lng)
+      const s = String(v).replace(/°\s*[NSEW]/gi, '').trim()
+      const n = parseFloat(s)
+      return isNaN(n) ? null : n
+    }
+    let lat, lng
+    if (Array.isArray(raw) && raw.length >= 2) {
+      lat = parseCoord(raw[0])
+      lng = parseCoord(raw[1])
+    } else if (raw && typeof raw === 'object') {
+      lat = raw.latitude ?? raw.lat ?? raw._lat
+      lng = raw.longitude ?? raw.lng ?? raw._long
+      if (lat != null && lng != null) {
+        lat = Number(lat)
+        lng = Number(lng)
+      }
+    }
+    if (lat != null && lng != null && locationList?.length) {
+      for (const loc of locationList) {
+        const locLat = loc.latitude ?? loc.lat
+        const locLng = loc.longitude ?? loc.lng
+        const radius = loc.radius != null ? Number(loc.radius) : 100
+        if (locLat != null && locLng != null && haversineMeters(lat, lng, locLat, locLng) <= radius) {
+          return loc.name || loc.locationName || ''
+        }
+      }
+    }
+    if (typeof raw === 'string' && raw.trim()) return raw.trim()
+    return ''
+  }, [locationList])
+
+  // Build location lookup: actual place name (e.g. Kopargaon) from check_ins/check_outs for TA route matching
+  // Master sheet uses place names like "Kopargaon", not bit names like "Wardha Interior"
+  const locationLookup = useMemo(() => {
+    const lookup = {}
+    const add = (rec, loc) => {
+      const placeName = resolvePlaceName(loc)
+      if (!placeName || placeName === '—') return
+      const empKeys = [rec.employeeId, rec.employeeEmail, rec.employee_email].filter(Boolean)
+      const distKeys = [rec.distributorId, rec.distributor, rec.distributorName].filter(Boolean)
+      const dateRaw = rec.date || rec.timestamp
+      if (empKeys.length === 0 || distKeys.length === 0 || !dateRaw) return
+      const d = parseDate(dateRaw)
+      if (!d) return
+      const dateKey = `${d.getDate()}/${d.getMonth()}/${d.getFullYear()}`
+      if (!lookup[dateKey]) lookup[dateKey] = {}
+      empKeys.forEach(ek => {
+        if (!lookup[dateKey][ek]) lookup[dateKey][ek] = {}
+        distKeys.forEach(dk => { lookup[dateKey][ek][dk] = placeName })
+      })
+    }
+    checkIns.forEach(ci => {
+      const loc = ci.checkInLocation || ci.check_in_location || ci.checkinLocation || ci.location
+      add(ci, loc)
+    })
+    checkOuts.forEach(co => {
+      const loc = co.checkOutLocation || co.check_out_location || co.checkoutLocation || co.location
+      add(co, loc)
+    })
+    return lookup
+  }, [checkIns, checkOuts, resolvePlaceName])
 
   const tableData = useMemo(() => {
     const monthIndex = MONTH_LABELS.indexOf(month)  // 0-based
@@ -123,12 +243,65 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
             ? dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
             : (co.date || '—')
 
-          // Resolve bits from check_ins using date+emp+dist key
+          // Resolve bits from check_ins: try multiple emp/dist key combos (check_in and check_out may use different field names)
           const dateObj2 = parseDate(co.date || co.timestamp)
           const dateKey  = dateObj2 ? `${dateObj2.getDate()}/${dateObj2.getMonth()}/${dateObj2.getFullYear()}` : ''
-          const distKey2 = co.distributorId || co.distributor || co.distributorName || ''
-          const bitsFromCI = (bitsLookup[dateKey]?.[empKey]?.[distKey2]) || ''
-          const bitName = bitsFromCI || co.bits || co.bitName || '—'
+          const empKeysToTry = [empKey, emp?.id, emp?.email].filter(Boolean)
+          const distKeysToTry = [co.distributorId, co.distributor, co.distributorName, dist?.id, dist?.distributorName, dist?.name, distName].filter(Boolean)
+          let bitsFromCI = ''
+          for (const ek of empKeysToTry) {
+            for (const dk of distKeysToTry) {
+              bitsFromCI = bitsLookup[dateKey]?.[ek]?.[dk] || ''
+              if (bitsFromCI) break
+            }
+            if (bitsFromCI) break
+          }
+          const bitName = bitsFromCI || co.bits || co.bitName || co.bit || '—'
+
+          // Resolve actual place name (e.g. Kopargaon) from check_in/check_out - master sheet uses this, not bit name (Wardha Interior)
+          let placeName = ''
+          for (const ek of empKeysToTry) {
+            for (const dk of distKeysToTry) {
+              placeName = locationLookup[dateKey]?.[ek]?.[dk] || ''
+              if (placeName) break
+            }
+            if (placeName) break
+          }
+          if (!placeName) {
+            const rawLoc = co.checkInLocation || co.checkOutLocation || co.check_in_location || co.check_out_location || co.location
+            placeName = resolvePlaceName(rawLoc) || ''
+          }
+
+          // Night halt: check boolean (nightHoult typo in Firebase) or numeric value
+          const isNightHalt = !!(co.nightHoult ?? co.nightHalt ?? (toN(co.nh ?? co.NH) > 0))
+          let nhVal = toN(co.nh ?? co.NH ?? co.nightHalt)
+          let taVal = toN(co.ta ?? co.TA ?? co.travelAllowance)
+
+          const sheetRows = masterSheetLookup[emp?.id] || masterSheetLookup[empKey] || []
+          const toCandidates = [placeName, bitName, location, distName].filter(t => t && t !== '—')
+
+          if (isNightHalt) {
+            // Night halt true: TA = oneWayTA * 1, N/H = nighthault amount from master sheet
+            for (const toDest of toCandidates) {
+              const row = getMasterRowForRoute(sheetRows, toDest)
+              if (row) {
+                const oneWay = row.oneWayTA != null && row.oneWayTA !== '' ? Number(row.oneWayTA) : 0
+                const nighthaultAmt = row.nighthault != null && row.nighthault !== '' ? Number(row.nighthault) : null
+                taVal = taVal > 0 ? taVal : oneWay * 1
+                nhVal = nighthaultAmt ?? nhVal
+                break
+              }
+            }
+          } else if (taVal === 0 && nhVal === 0) {
+            // No night halt: TA = oneWayTA * 2 from master sheet
+            for (const toDest of toCandidates) {
+              const oneWay = getOneWayTAForRoute(sheetRows, toDest)
+              if (oneWay != null && oneWay > 0) {
+                taVal = oneWay * 2
+                break
+              }
+            }
+          }
 
           return {
             id: co.id,
@@ -138,9 +311,9 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
             secondary:      toN(co.achievedSecondary ?? co.secondaryAchieved),
             totalCalls:     toN(co.totalCall ?? co.totalCalls),
             productiveCalls:toN(co.productiveCalls ?? co.productiveCall),
-            ta:             toN(co.ta ?? co.TA ?? co.travelAllowance),
+            ta:             taVal,
             da:             toN(co.da ?? co.DA ?? co.dailyAllowance),
-            nh:             toN(co.nh ?? co.NH ?? co.nightHalt),
+            nh:             nhVal,
           }
         })
 
@@ -169,14 +342,61 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
       return { empKey, employee: { name, role, avatar }, salary, details, workDays, ...totals }
     })
 
-    // Apply search filter
-    if (!searchQuery.trim()) return rows
+    return rows
+  }, [checkOuts, employees, distributors, bitsLookup, locationLookup, masterSheetLookup, resolvePlaceName, year, month])
+
+  // Filter by search for display
+  const displayRows = useMemo(() => {
+    if (!searchQuery.trim()) return tableData
     const q = searchQuery.toLowerCase().trim()
-    return rows.filter(r =>
+    return tableData.filter(r =>
       r.employee.name.toLowerCase().includes(q) ||
       r.details.some(d => d.distName.toLowerCase().includes(q))
     )
-  }, [checkOuts, employees, distributors, bitsLookup, year, month, searchQuery])
+  }, [tableData, searchQuery])
+
+  // Sync computed disbursement data to Expenditure collection (auto-updates when source data changes)
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db || tableData.length === 0) return
+    const monthIndex = MONTH_LABELS.indexOf(month)
+    const yr = String(year)
+    const promises = tableData.map((row) => {
+      const docId = `${yr}_${month}_${String(row.empKey).replace(/[/\\?#]/g, '_')}`
+      const payload = {
+        employeeId: row.empKey,
+        employeeName: row.employee.name,
+        employeeRole: row.employee.role,
+        year: yr,
+        month,
+        monthIndex,
+        totals: {
+          secondary: row.secondary,
+          workDays: row.workDays,
+          productiveCalls: row.productiveCalls,
+          ta: row.ta,
+          da: row.da,
+          nh: row.nh,
+        },
+        salary: row.salary,
+        details: row.details.map((d) => ({
+          id: d.id,
+          dateLabel: d.dateLabel,
+          distName: d.distName,
+          location: d.location,
+          bitName: d.bitName,
+          secondary: d.secondary,
+          totalCalls: d.totalCalls,
+          productiveCalls: d.productiveCalls,
+          ta: d.ta,
+          da: d.da,
+          nh: d.nh,
+        })),
+        updatedAt: serverTimestamp(),
+      }
+      return setDoc(doc(db, EXPENDITURE_COLLECTION, docId), payload, { merge: true })
+    })
+    Promise.allSettled(promises).catch((err) => console.warn('Expenditure sync error:', err))
+  }, [tableData, year, month])
 
   if (tableData.length === 0) {
     return (
@@ -206,7 +426,7 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
             </tr>
           </thead>
           <tbody>
-            {tableData.map((row) => (
+            {displayRows.map((row) => (
               <React.Fragment key={row.empKey}>
                 <tr>
                   <td>

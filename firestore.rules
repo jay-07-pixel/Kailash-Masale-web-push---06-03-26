@@ -83,5 +83,10 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Expenditure: disbursement data synced from DisbursementTable (totals + daily details per employee per month)
+    match /Expenditure/{docId} {
+      allow read, write: if true;
+    }
+
   }
 }

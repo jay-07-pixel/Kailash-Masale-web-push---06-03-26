@@ -217,7 +217,12 @@ const OverviewCards = () => {
               </span>
             </div>
             <div className="card-title">{card.title}</div>
-            {isOrders ? (
+            {isCheckInOut ? (
+              <div className="card-checkinout-with-employees">
+                <div className="card-value">{card.value}</div>
+                <div className="card-subvalue">Total Employees: {employees.length}</div>
+              </div>
+            ) : isOrders ? (
               <div className="order-breakdown">
                 <div className="order-breakdown-item">
                   <span className="order-breakdown-dot pending-dot" />

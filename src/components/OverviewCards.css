@@ -115,6 +115,18 @@
   color: #1a202c;
 }
 
+.card-checkinout-with-employees {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-subvalue {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
 .order-breakdown {
   display: flex;
   flex-direction: row;

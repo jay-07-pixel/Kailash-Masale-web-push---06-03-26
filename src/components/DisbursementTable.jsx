@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { collection, onSnapshot, doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react'
+import { collection, onSnapshot, doc, setDoc, serverTimestamp, deleteField } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
+import { useExpenditureAdmin } from '../hooks/useExpenditureAdmin'
+import { applyOverridesToRows, buildTaDaFirestorePresentation } from '../utils/disbursementOverrideTiers'
 import './DisbursementTable.css'
 
 const CHECK_INS_COLLECTION     = 'check_ins'
@@ -10,6 +12,8 @@ const DISTRIBUTORS_COLLECTION = 'distributors'
 const MASTER_SHEETS_COLLECTION = 'master_sheets'
 const LOCATIONS_COLLECTION    = 'locations'
 const EXPENDITURE_COLLECTION  = 'Expenditure'
+const MONTHLY_DATA_COLLECTION = 'monthlyData'
+const DISBURSEMENT_OVERRIDES_COLLECTION = 'disbursementOverrides'
 
 const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
@@ -46,7 +50,219 @@ function fmt(v) {
   return v > 0 ? v : '—'
 }
 
-const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
+/** Calendar days in month that are not Sunday (denominator for salary formula). */
+function countNonSundayDaysInMonth(yr, monthIndex0) {
+  const lastDay = new Date(yr, monthIndex0 + 1, 0).getDate()
+  let n = 0
+  for (let day = 1; day <= lastDay; day++) {
+    if (new Date(yr, monthIndex0, day).getDay() !== 0) n++
+  }
+  return n
+}
+
+function dateKeyYMD(d) {
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+}
+
+/** Non-Sunday days in month with no check-in and no check-out = leave. */
+function countLeavesNonSunday(yr, monthIndex0, presentDateKeys) {
+  const lastDay = new Date(yr, monthIndex0 + 1, 0).getDate()
+  let leaves = 0
+  for (let day = 1; day <= lastDay; day++) {
+    const d = new Date(yr, monthIndex0, day)
+    if (d.getDay() === 0) continue
+    if (!presentDateKeys.has(dateKeyYMD(d))) leaves++
+  }
+  return leaves
+}
+
+/** Gross / base salary from employee doc. */
+function getGrossSalary(emp) {
+  if (!emp) return 0
+  const v = emp.grossSalary ?? emp.gross_salary ?? emp.salary ?? emp.baseSalary
+  return toN(v)
+}
+
+/**
+ * Monthly salary = Gross - (Leaves × Gross ÷ Working days in month)
+ * Working days = days in that month excluding Sundays.
+ */
+function computeNetMonthlySalary(gross, leaves, workingDaysInMonth) {
+  const g = Number(gross) || 0
+  if (g <= 0 || workingDaysInMonth <= 0) return null
+  const net = g - leaves * (g / workingDaysInMonth)
+  return Math.round(net)
+}
+
+function mergeAttendanceSets(attendanceByKey, empKey, emp) {
+  const merged = new Set()
+  const keys = [empKey, emp?.id, emp?.email, emp?.employeeEmail].filter(Boolean)
+  keys.forEach((k) => {
+    const s = attendanceByKey[k]
+    if (s) s.forEach((d) => merged.add(d))
+  })
+  return merged
+}
+
+/** Target achievement % from monthlyData distributorDetails (same shape as Monthly table save). */
+function parseAchievementPctFromDistributorDetail(dd) {
+  if (!dd) return null
+  const a = dd.achieved
+  if (a != null && a !== '' && a !== '—') {
+    const s = String(a).trim()
+    if (/%/.test(s)) {
+      const n = parseFloat(s.replace(/[^\d.]/g, ''))
+      if (!Number.isNaN(n)) return n
+    }
+  }
+  const target = toN(dd.target)
+  if (target <= 0) return null
+  const p1 = toN(dd.primary1to7) + toN(dd.primary8to15) + toN(dd.primary16to22) + toN(dd.primary23to31)
+  return Math.round((p1 / target) * 1000) / 10
+}
+
+/** Styling from monthlyData target achieved % — does not change TA/DA values. */
+function taDaStyleClasses(pct) {
+  if (pct == null || Number.isNaN(pct)) return { taClass: '', daClass: '' }
+  if (pct < 50) return { taClass: 'disb-tada-bold-red', daClass: 'disb-tada-bold-red' }
+  if (pct <= 70) return { taClass: '', daClass: 'disb-da-red' }
+  return { taClass: 'disb-tada-bold-blue', daClass: 'disb-tada-bold-blue' }
+}
+
+/** Doc id like 3gXEWzN8VYini2gO8Pg4_2026_Mar → { empId, year, month } */
+function parseMonthlyDataDocumentId(id) {
+  if (!id || typeof id !== 'string') return null
+  const parts = id.split('_')
+  if (parts.length < 3) return null
+  const monthLabel = parts[parts.length - 1]
+  const yearPart = parts[parts.length - 2]
+  if (!MONTH_LABELS.includes(monthLabel)) return null
+  const empId = parts.slice(0, -2).join('_')
+  if (!empId || !/^\d{4}$/.test(yearPart)) return null
+  return { empId, year: yearPart, month: monthLabel }
+}
+
+function monthlyDataDocMatchesPeriod(doc, periodKey) {
+  if (doc.period === periodKey) return true
+  const p = parseMonthlyDataDocumentId(doc.id)
+  if (!p) return false
+  return `${p.year}_${p.month}` === periodKey
+}
+
+function findMonthlyDataForEmployee(monthlyDataForPeriod, emp, empKey, periodKey) {
+  const ids = new Set(
+    [emp?.id, empKey, emp?.email, emp?.employeeEmail].filter(Boolean).map((x) => String(x))
+  )
+  return monthlyDataForPeriod.find((m) => {
+    if (!monthlyDataDocMatchesPeriod(m, periodKey)) return false
+    const mid = m.employeeId != null ? String(m.employeeId) : ''
+    if (mid && ids.has(mid)) return true
+    const parsed = parseMonthlyDataDocumentId(m.id)
+    return !!(parsed && ids.has(parsed.empId))
+  })
+}
+
+function resolveDistributorDetail(mdDoc, distributorId, co, distributors) {
+  if (!mdDoc?.distributorDetails) return null
+  const details = mdDoc.distributorDetails
+  if (distributorId && details[distributorId]) return details[distributorId]
+  const name = (co.distributorName || co.distributor || '').trim()
+  if (!name) return null
+  const norm = (s) => String(s || '').trim().toLowerCase()
+  const n = norm(name.split(',')[0])
+  for (const d of distributors) {
+    const id = d.id
+    if (!id || !details[id]) continue
+    const dn = norm(d.distributorName || d.name || '')
+    if (dn && (n.includes(dn) || dn.includes(n) || norm(name) === dn)) return details[id]
+  }
+  return null
+}
+
+function normalizeOverrideEntry(e) {
+  if (!e || typeof e !== 'object') return {}
+  const out = { ...e }
+  delete out.taAmount
+  delete out.daAmount
+  if (out.taTier === 'auto') delete out.taTier
+  if (out.daTier === 'auto') delete out.daTier
+  return out
+}
+
+const DisbursementDetailRow = memo(function DisbursementDetailRow({ detail, ov, showControls, onPatch }) {
+  const taTier = ov?.taTier || 'auto'
+  const daTier = ov?.daTier || 'auto'
+  return (
+    <tr>
+      <td className="disb-date-cell">{detail.dateLabel}</td>
+      <td>
+        <div className="distributor-cell">
+          <div className="distributor-info">
+            <div className="distributor-name">{detail.distName}</div>
+            <div className="distributor-location">{detail.location}</div>
+          </div>
+        </div>
+      </td>
+      <td>{detail.bitName}</td>
+      <td>{fmt(detail.secondary)}</td>
+      <td>{fmt(detail.totalCalls)}</td>
+      <td>{fmt(detail.productiveCalls)}</td>
+      <td
+        className={['disb-override-cell', detail.taClass || ''].filter(Boolean).join(' ')}
+      >
+        <div className="disb-cell-stack">
+          <span>{fmt(detail.ta)}</span>
+          {showControls && (
+            <select
+              className="disb-override-select"
+              value={taTier}
+              onChange={(e) => onPatch(detail.id, { taTier: e.target.value })}
+              aria-label="TA color override"
+            >
+              <option value="auto">TA: Auto</option>
+              <option value="red">TA: Red</option>
+              <option value="blue">TA: Blue</option>
+              <option value="none">TA: Plain</option>
+            </select>
+          )}
+        </div>
+      </td>
+      <td
+        className={['disb-override-cell', detail.daClass || ''].filter(Boolean).join(' ')}
+      >
+        <div className="disb-cell-stack">
+          <span>{detail.daDisplay > 0 ? detail.daDisplay : '—'}</span>
+          {showControls && (
+            <select
+              className="disb-override-select"
+              value={daTier}
+              onChange={(e) => onPatch(detail.id, { daTier: e.target.value })}
+              aria-label="DA color override"
+            >
+              <option value="auto">DA: Auto</option>
+              <option value="redBold">DA: Red bold</option>
+              <option value="blueBold">DA: Blue bold</option>
+              <option value="midRed">DA: Red (50–70%)</option>
+              <option value="withheld">DA: Withheld style</option>
+              <option value="none">DA: Plain</option>
+            </select>
+          )}
+        </div>
+      </td>
+      <td>{fmt(detail.nh)}</td>
+    </tr>
+  )
+})
+
+const DisbursementTable = ({
+  year = '2026',
+  month = 'Jan',
+  searchQuery = '',
+  showOverrideControls = false,
+  onSummaryChange,
+}) => {
+  const isExpenditureAdmin = useExpenditureAdmin()
+  const showOverrideDropdowns = isExpenditureAdmin && showOverrideControls
   const [expandedRows, setExpandedRows] = useState({})
   const [checkIns, setCheckIns]         = useState([])
   const [checkOuts, setCheckOuts]       = useState([])
@@ -54,6 +270,81 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
   const [distributors, setDistributors] = useState([])
   const [masterSheets, setMasterSheets] = useState([])
   const [locationList, setLocationList] = useState([])
+  const [monthlyDataRaw, setMonthlyDataRaw] = useState([])
+  const [disbursementOverrideEntries, setDisbursementOverrideEntries] = useState({})
+  const overrideEntriesRef = useRef({})
+  const debounceTimers = useRef({})
+
+  useEffect(() => {
+    overrideEntriesRef.current = disbursementOverrideEntries
+  }, [disbursementOverrideEntries])
+
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db) return
+    const unsub = onSnapshot(collection(db, MONTHLY_DATA_COLLECTION), (snapshot) => {
+      setMonthlyDataRaw(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })))
+    })
+    return () => unsub()
+  }, [])
+
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db) return
+    const docId = `${year}_${month}`
+    const unsub = onSnapshot(doc(db, DISBURSEMENT_OVERRIDES_COLLECTION, docId), (snap) => {
+      setDisbursementOverrideEntries(snap.exists() ? snap.data().entries || {} : {})
+    })
+    return () => unsub()
+  }, [year, month])
+
+  const flushOverrideToFirestore = useCallback(
+    async (checkoutId, entry) => {
+      if (!isFirebaseConfigured || !db) return
+      const docRef = doc(db, DISBURSEMENT_OVERRIDES_COLLECTION, `${year}_${month}`)
+      const cleaned = normalizeOverrideEntry(entry)
+      if (Object.keys(cleaned).length === 0) {
+        await setDoc(
+          docRef,
+          { [`entries.${checkoutId}`]: deleteField(), updatedAt: serverTimestamp() },
+          { merge: true }
+        )
+      } else {
+        await setDoc(
+          docRef,
+          { [`entries.${checkoutId}`]: cleaned, updatedAt: serverTimestamp() },
+          { merge: true }
+        )
+      }
+    },
+    [year, month]
+  )
+
+  const patchDisbursementOverride = useCallback(
+    (checkoutId, patch) => {
+      const merged = { ...(overrideEntriesRef.current[checkoutId] || {}), ...patch }
+      const cleaned = normalizeOverrideEntry(merged)
+      window.clearTimeout(debounceTimers.current[checkoutId])
+      debounceTimers.current[checkoutId] = window.setTimeout(() => {
+        void flushOverrideToFirestore(checkoutId, cleaned)
+        delete debounceTimers.current[checkoutId]
+      }, 420)
+    },
+    [flushOverrideToFirestore]
+  )
+
+  useEffect(
+    () => () => {
+      Object.keys(debounceTimers.current).forEach((k) => {
+        window.clearTimeout(debounceTimers.current[k])
+      })
+    },
+    []
+  )
+
+  const periodKey = `${year}_${month}`
+  const monthlyDataForPeriod = useMemo(
+    () => monthlyDataRaw.filter((m) => monthlyDataDocMatchesPeriod(m, periodKey)),
+    [monthlyDataRaw, periodKey]
+  )
 
   useEffect(() => {
     if (!isFirebaseConfigured || !db) return
@@ -100,6 +391,16 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
     const row = getMasterRowForRoute(rows, toDestination)
     const nh = row?.nighthault
     return nh != null && nh !== '' ? Number(nh) : null
+  }
+
+  /** DA from master_sheets row for route (same matching as TA); null if cell empty / no row */
+  const getDAForRoute = (rows, toDestination) => {
+    const row = getMasterRowForRoute(rows, toDestination)
+    if (!row) return null
+    const d = row.da
+    if (d == null || (typeof d === 'string' && !String(d).trim())) return null
+    const n = toN(d)
+    return Number.isFinite(n) ? n : null
   }
 
   // Build bits lookup: normalised date-key → empKey → distKey → bits string
@@ -192,9 +493,24 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
     return lookup
   }, [checkIns, checkOuts, resolvePlaceName])
 
-  const tableData = useMemo(() => {
+  const baseTableData = useMemo(() => {
     const monthIndex = MONTH_LABELS.indexOf(month)  // 0-based
     const yr = Number(year)
+    const workingDaysInMonth = countNonSundayDaysInMonth(yr, monthIndex)
+
+    // Any day with check-in OR check-out counts as present (not a leave)
+    const attendanceByKey = {}
+    const addAttendance = (rec) => {
+      const d = parseDate(rec.date || rec.timestamp)
+      if (!d || d.getFullYear() !== yr || d.getMonth() !== monthIndex) return
+      const ek = rec.employeeId || rec.employeeEmail || rec.employee_email
+      if (!ek) return
+      const dk = dateKeyYMD(d)
+      if (!attendanceByKey[ek]) attendanceByKey[ek] = new Set()
+      attendanceByKey[ek].add(dk)
+    }
+    checkIns.forEach(addAttendance)
+    checkOuts.forEach(addAttendance)
 
     // Filter checkouts to selected month/year
     const filtered = checkOuts.filter(co => {
@@ -219,7 +535,11 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
       )
       const name   = emp?.salesPersonName || emp?.name || emp?.email || empKey
       const role   = emp?.designation || emp?.role || '—'
-      const salary = emp?.salary ?? '—'
+      const presentDates = mergeAttendanceSets(attendanceByKey, empKey, emp)
+      const leaves = countLeavesNonSunday(yr, monthIndex, presentDates)
+      const gross = getGrossSalary(emp)
+      const salaryNum = computeNetMonthlySalary(gross, leaves, workingDaysInMonth)
+      const salary = salaryNum != null ? salaryNum : '—'
       const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(name.replace(/\s+/g, '+'))}&background=6b7280&color=fff`
 
       // One detail row per checkout record (sorted by date ascending)
@@ -303,16 +623,56 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
             }
           }
 
+          let distributorId = dist?.id || (typeof distKey === 'string' && distKey.length > 0 ? distKey : '')
+          const mdDoc = findMonthlyDataForEmployee(monthlyDataForPeriod, emp, empKey, periodKey)
+          if (mdDoc?.distributorDetails && distributorId && !mdDoc.distributorDetails[distributorId]) {
+            const byName = distributors.find(
+              (d) =>
+                (d.distributorName && co.distributorName && d.distributorName === co.distributorName) ||
+                (d.name && co.distributorName && d.name === co.distributorName)
+            )
+            if (byName?.id) distributorId = byName.id
+          }
+          const distDetail = resolveDistributorDetail(mdDoc, distributorId, co, distributors)
+          const achievementPct = parseAchievementPctFromDistributorDetail(distDetail)
+          const { taClass, daClass: daClassFromPct } = taDaStyleClasses(achievementPct)
+          const totalCalls = toN(co.totalCall ?? co.totalCalls)
+
+          let daFromMaster = null
+          for (const toDest of toCandidates) {
+            const n = getDAForRoute(sheetRows, toDest)
+            if (n != null) {
+              daFromMaster = n
+              break
+            }
+          }
+          const daCheckout = toN(co.da ?? co.DA ?? co.dailyAllowance)
+          const daResolved = daFromMaster != null ? daFromMaster : daCheckout
+          const daPaid = totalCalls < 30 ? 0 : daResolved
+          const daClass =
+            totalCalls < 30 && daResolved > 0
+              ? 'disb-da-withheld'
+              : totalCalls < 30
+                ? ''
+                : daClassFromPct
+
           return {
-            id: co.id,
+            id:
+              co.id ||
+              `${empKey}_${dateLabel}_${String(co.distributorId || co.distributorName || '').slice(0, 48)}`,
             dateLabel,
             distName, location, icon,
             bitName,
+            distributorId,
+            achievementPct,
+            taClass,
+            daClass,
             secondary:      toN(co.achievedSecondary ?? co.secondaryAchieved),
-            totalCalls:     toN(co.totalCall ?? co.totalCalls),
+            totalCalls,
             productiveCalls:toN(co.productiveCalls ?? co.productiveCall),
             ta:             taVal,
-            da:             toN(co.da ?? co.DA ?? co.dailyAllowance),
+            da:             daPaid,
+            daDisplay:      daResolved,
             nh:             nhVal,
           }
         })
@@ -325,25 +685,41 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
         }).filter(Boolean)
       )
 
-      // Employee-level totals
+      // Employee-level totals: `da` = paid DA (0 when calls <30); `daSumDisplay` = sum of master/checkout DA shown per row
       const totals = details.reduce(
         (acc, d) => ({
           secondary:       acc.secondary        + d.secondary,
           productiveCalls: acc.productiveCalls   + d.productiveCalls,
           ta:              acc.ta                + d.ta,
           da:              acc.da                + d.da,
+          daSumDisplay:    acc.daSumDisplay      + (d.daDisplay ?? 0),
           nh:              acc.nh                + d.nh,
         }),
-        { secondary: 0, productiveCalls: 0, ta: 0, da: 0, nh: 0 }
+        { secondary: 0, productiveCalls: 0, ta: 0, da: 0, daSumDisplay: 0, nh: 0 }
       )
 
       const workDays = uniqueDates.size
 
-      return { empKey, employee: { name, role, avatar }, salary, details, workDays, ...totals }
+      return {
+        empKey,
+        employee: { name, role, avatar },
+        salary,
+        grossSalary: gross,
+        leaves,
+        workingDaysInMonth,
+        details,
+        workDays,
+        ...totals,
+      }
     })
 
     return rows
-  }, [checkOuts, employees, distributors, bitsLookup, locationLookup, masterSheetLookup, resolvePlaceName, year, month])
+  }, [checkIns, checkOuts, employees, distributors, bitsLookup, locationLookup, masterSheetLookup, resolvePlaceName, year, month, monthlyDataForPeriod, periodKey])
+
+  const tableData = useMemo(
+    () => applyOverridesToRows(baseTableData, disbursementOverrideEntries),
+    [baseTableData, disbursementOverrideEntries]
+  )
 
   // Filter by search for display
   const displayRows = useMemo(() => {
@@ -355,7 +731,26 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
     )
   }, [tableData, searchQuery])
 
-  // Sync computed disbursement data to Expenditure collection (auto-updates when source data changes)
+  const pageSummary = useMemo(() => {
+    let incentives = 0
+    monthlyDataForPeriod.forEach((m) => {
+      const dd = m.distributorDetails || {}
+      Object.values(dd).forEach((row) => {
+        if (row && typeof row === 'object') incentives += toN(row.incentive)
+      })
+    })
+    const salary = tableData.reduce((s, r) => s + (typeof r.salary === 'number' ? r.salary : 0), 0)
+    const da = tableData.reduce((s, r) => s + (r.daSumDisplay ?? 0), 0)
+    const ta = tableData.reduce((s, r) => s + (r.ta || 0), 0)
+    const nh = tableData.reduce((s, r) => s + (r.nh || 0), 0)
+    return { salary, da, ta, nh, incentives }
+  }, [tableData, monthlyDataForPeriod])
+
+  useEffect(() => {
+    onSummaryChange?.(pageSummary)
+  }, [pageSummary, onSummaryChange])
+
+  // Sync computed disbursement data to Expenditure + mirror TA/DA value + class + color per line
   useEffect(() => {
     if (!isFirebaseConfigured || !db || tableData.length === 0) return
     const monthIndex = MONTH_LABELS.indexOf(month)
@@ -375,27 +770,51 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
           productiveCalls: row.productiveCalls,
           ta: row.ta,
           da: row.da,
+          daDisplayTotal: row.daSumDisplay,
           nh: row.nh,
         },
         salary: row.salary,
-        details: row.details.map((d) => ({
-          id: d.id,
-          dateLabel: d.dateLabel,
-          distName: d.distName,
-          location: d.location,
-          bitName: d.bitName,
-          secondary: d.secondary,
-          totalCalls: d.totalCalls,
-          productiveCalls: d.productiveCalls,
-          ta: d.ta,
-          da: d.da,
-          nh: d.nh,
-        })),
+        grossSalary: row.grossSalary,
+        leaves: row.leaves,
+        workingDaysInMonth: row.workingDaysInMonth,
+        details: row.details.map((d) => {
+          const pres = buildTaDaFirestorePresentation(d)
+          return {
+            id: d.id,
+            dateLabel: d.dateLabel,
+            distName: d.distName,
+            location: d.location,
+            bitName: d.bitName,
+            secondary: d.secondary,
+            totalCalls: d.totalCalls,
+            productiveCalls: d.productiveCalls,
+            ta: d.ta,
+            da: d.da,
+            daDisplay: d.daDisplay,
+            nh: d.nh,
+            taClass: pres.ta.class,
+            daClass: pres.da.class,
+            taColor: pres.ta.color,
+            daColor: pres.da.color,
+            taPresentation: pres.ta,
+            daPresentation: pres.da,
+          }
+        }),
         updatedAt: serverTimestamp(),
       }
       return setDoc(doc(db, EXPENDITURE_COLLECTION, docId), payload, { merge: true })
     })
-    Promise.allSettled(promises).catch((err) => console.warn('Expenditure sync error:', err))
+
+    const overridesDocRef = doc(db, DISBURSEMENT_OVERRIDES_COLLECTION, `${year}_${month}`)
+    const resolvedPatch = { resolvedSnapshotAt: serverTimestamp() }
+    tableData.forEach((row) => {
+      row.details.forEach((d) => {
+        resolvedPatch[`entries.${d.id}.resolved`] = buildTaDaFirestorePresentation(d)
+      })
+    })
+    promises.push(setDoc(overridesDocRef, resolvedPatch, { merge: true }))
+
+    Promise.allSettled(promises).catch((err) => console.warn('Expenditure / override sync error:', err))
   }, [tableData, year, month])
 
   if (tableData.length === 0) {
@@ -410,6 +829,12 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
 
   return (
     <div className="disbursement-table-container">
+      {showOverrideDropdowns && (
+        <p className="disb-admin-hint">
+          TA/DA dropdowns override <strong>colors only</strong> (amounts stay from checkout / master sheet / rules).
+          Changes save automatically (debounced).
+        </p>
+      )}
       <div className="table-wrapper">
         <table className="disbursement-table">
           <thead>
@@ -442,7 +867,7 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
                   <td>{fmt(row.workDays)}</td>
                   <td>{fmt(row.productiveCalls)}</td>
                   <td>{fmt(row.ta)}</td>
-                  <td>{fmt(row.da)}</td>
+                  <td>{fmt(row.daSumDisplay)}</td>
                   <td>{fmt(row.nh)}</td>
                   <td className="salary-cell">{row.salary}</td>
                   <td>
@@ -479,24 +904,13 @@ const DisbursementTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =
                               <tr><td colSpan="9" style={{ textAlign: 'center', color: '#94a3b8', padding: '16px' }}>No checkout data</td></tr>
                             ) : (
                               row.details.map((detail) => (
-                                <tr key={detail.id}>
-                                  <td className="disb-date-cell">{detail.dateLabel}</td>
-                                  <td>
-                                    <div className="distributor-cell">
-                                      <div className="distributor-info">
-                                        <div className="distributor-name">{detail.distName}</div>
-                                        <div className="distributor-location">{detail.location}</div>
-                                      </div>
-                                    </div>
-                                  </td>
-                                  <td>{detail.bitName}</td>
-                                  <td>{fmt(detail.secondary)}</td>
-                                  <td>{fmt(detail.totalCalls)}</td>
-                                  <td>{fmt(detail.productiveCalls)}</td>
-                                  <td>{fmt(detail.ta)}</td>
-                                  <td>{fmt(detail.da)}</td>
-                                  <td>{fmt(detail.nh)}</td>
-                                </tr>
+                                <DisbursementDetailRow
+                                  key={detail.id}
+                                  detail={detail}
+                                  ov={disbursementOverrideEntries[detail.id]}
+                                  showControls={showOverrideDropdowns}
+                                  onPatch={patchDisbursementOverride}
+                                />
                               ))
                             )}
                           </tbody>

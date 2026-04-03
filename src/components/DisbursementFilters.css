@@ -124,6 +124,16 @@
   border-color: #9ca3af;
 }
 
+.disb-edit-button-active {
+  background-color: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.disb-edit-button-active:hover {
+  background-color: #bfdbfe;
+  border-color: #2563eb;
+}
+
 .disb-edit-icon {
   width: 16px;
   height: 16px;

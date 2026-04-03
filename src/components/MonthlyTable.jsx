@@ -12,6 +12,22 @@ const PERFORMANCE_COLLECTION     = 'performance'
 
 const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
+/** Firestore monthly_data doc id: {employeeId}_{year}_{monthNumber} e.g. YCbRIhu3oWwVkw0cGCCZ_2026_3 */
+function parseMonthlyDataDocId(docId) {
+  if (!docId || typeof docId !== 'string') return null
+  const parts = docId.split('_')
+  if (parts.length < 3) return null
+  const month = Number(parts[parts.length - 1])
+  const yr = Number(parts[parts.length - 2])
+  const empId = parts.slice(0, -2).join('_')
+  if (!empId || Number.isNaN(month) || Number.isNaN(yr)) return null
+  return { empId, year: yr, month }
+}
+
+function monthlyData2DocIdFor(employeeId, yr, monthNum) {
+  return `${employeeId}_${yr}_${monthNum}`
+}
+
 // Always parse as dd/mm/yyyy (Indian date format used throughout the app)
 function parseCheckoutDate(v) {
   if (!v) return null
@@ -211,40 +227,60 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
     }
     try {
       await setDoc(doc(db, MONTHLY_DATA_COLLECTION, docId), payload, { merge: true })
-      // Also update monthly_data so targetKg (and workingDays, incentive) stay in sync for this distributor
+      // Also update monthly_data: doc id is {employeeId}_{year}_{month} (see Firestore console)
       const monthNum = MONTH_LABELS.indexOf(month) + 1
       const yr = Number(year)
-      const monthlyData2Doc = monthlyData2.find(
-        (m) =>
-          m.employeeId === row.id &&
-          Number(m.month ?? m.Month) === monthNum &&
-          (m.year == null || Number(m.year) === yr)
-      )
-      if (monthlyData2Doc?.id) {
-        const rows = [...(monthlyData2Doc.rows || [])]
-        const rowIndex = rows.findIndex((r) => (r.distributorId || r.distributor_id) === selectedDistributorId)
-        const targetKgVal = Number(form.target) || 0
-        const workingDaysVal = Number(form.workingDays) || 0
-        const incentiveVal = form.incentive === '' || form.incentive === '—' ? '—' : (Number(form.incentive) || form.incentive)
-        const updatedRow = {
-          ...(rowIndex >= 0 ? rows[rowIndex] : {}),
-          distributorId: selectedDistributorId,
-          targetKg: targetKgVal,
-          workingDays: workingDaysVal,
-          incentive: incentiveVal,
-        }
-        if (rowIndex >= 0) {
-          rows[rowIndex] = updatedRow
-        } else {
-          rows.push(updatedRow)
-        }
-        const { id: _docId, ...docData } = monthlyData2Doc
-        await setDoc(
-          doc(db, MONTHLY_DATA2_COLLECTION, monthlyData2Doc.id),
-          { ...docData, rows },
-          { merge: true }
-        )
+      const canonicalId = monthlyData2DocIdFor(row.id, yr, monthNum)
+      const monthlyData2Doc =
+        monthlyData2.find((m) => m.id === canonicalId) ||
+        monthlyData2.find((m) => {
+          const parsed = parseMonthlyDataDocId(m.id)
+          return (
+            (m.employeeId === row.id || parsed?.empId === row.id) &&
+            Number(m.month ?? m.Month ?? parsed?.month ?? '') === monthNum &&
+            (m.year == null || Number(m.year) === yr || parsed?.year === yr)
+          )
+        })
+      const targetFirestoreId = monthlyData2Doc?.id || canonicalId
+      const rows = [...(monthlyData2Doc?.rows || [])]
+      const rowIndex = rows.findIndex((r) => (r.distributorId || r.distributor_id) === selectedDistributorId)
+      const targetKgVal = Number(form.target) || 0
+      const workingDaysVal = Number(form.workingDays) || 0
+      const incentiveVal = form.incentive === '' || form.incentive === '—' ? '—' : (Number(form.incentive) || form.incentive)
+      const distRec = distributors.find((d) => d.id === selectedDistributorId)
+      const detailLine = row.details?.find((d) => d.distributorId === selectedDistributorId)
+      const distName =
+        detailLine?.distributor?.name ||
+        distRec?.distributorName ||
+        distRec?.name ||
+        '—'
+      const updatedRow = {
+        ...(rowIndex >= 0 ? rows[rowIndex] : {}),
+        distributorId: selectedDistributorId,
+        distributorName: rows[rowIndex]?.distributorName || distName,
+        bits: rowIndex >= 0 ? (rows[rowIndex]?.bits ?? '—') : '—',
+        lmaKg: rows[rowIndex]?.lmaKg ?? rows[rowIndex]?.lma ?? '0',
+        targetKg: targetKgVal,
+        workingDays: workingDaysVal,
+        incentive: incentiveVal,
       }
+      if (rowIndex >= 0) {
+        rows[rowIndex] = updatedRow
+      } else {
+        rows.push(updatedRow)
+      }
+      const { id: _docId, ...docData } = monthlyData2Doc || {}
+      await setDoc(
+        doc(db, MONTHLY_DATA2_COLLECTION, targetFirestoreId),
+        {
+          ...docData,
+          employeeId: row.id,
+          month: monthNum,
+          year: yr,
+          rows,
+        },
+        { merge: true }
+      )
       setEditModal({ open: false, row: null, form: null, selectedDistributorId: null })
     } catch (e) {
       console.error('saveEdit failed:', e)
@@ -318,17 +354,19 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
   }, [checkoutLookup])
 
   // Build lookup from monthly_data: empId → distId → { targetKg, workingDays, lmaKg, incentive }
-  // monthly_data stores month as a number field (no year field) — match by month only.
-  // Doc ID: {employeeId}_{year}_{monthNumber}, e.g. YCbRIhu3oWwVkw0cGCCZ_2025_3
+  // Doc ID: {employeeId}_{year}_{monthNumber}, e.g. YCbRIhu3oWwVkw0cGCCZ_2026_3 (employeeId may only exist in id)
   const targetLookup = useMemo(() => {
     const monthNum = MONTH_LABELS.indexOf(month) + 1   // Jan→1 … Dec→12
+    const yr = Number(year)
     const lookup = {}
     monthlyData2.forEach((docObj) => {
-      // Filter by month field only (monthly_data has no year field)
-      const docMonth = Number(docObj.month ?? docObj.Month ?? '')
+      const parsed = parseMonthlyDataDocId(docObj.id)
+      const docMonth = Number(docObj.month ?? docObj.Month ?? parsed?.month ?? '')
       if (docMonth !== monthNum) return
+      const docYear = docObj.year != null ? Number(docObj.year) : parsed?.year
+      if (docYear != null && docYear !== yr) return
 
-      const empId = docObj.employeeId
+      const empId = docObj.employeeId || parsed?.empId
       if (!empId) return
       if (!lookup[empId]) lookup[empId] = {}
 
@@ -347,7 +385,7 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
       })
     })
     return lookup
-  }, [monthlyData2, month])
+  }, [monthlyData2, month, year])
 
   const tableData = useMemo(() => {
     const toNum = (v) => { const n = parseFloat(String(v ?? '').replace(/[^\d.]/g, '')); return isNaN(n) ? 0 : n }

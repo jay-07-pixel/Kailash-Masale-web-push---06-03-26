@@ -1,8 +1,17 @@
 .disbursement-summary-cards {
+  margin-bottom: 24px;
+}
+
+.disbursement-summary-period {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.disbursement-summary-cards-row {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 16px;
-  margin-bottom: 24px;
 }
 
 .disbursement-summary-card {
@@ -18,19 +27,19 @@
 }
 
 @media (max-width: 1400px) {
-  .disbursement-summary-cards {
+  .disbursement-summary-cards-row {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media (max-width: 900px) {
-  .disbursement-summary-cards {
+  .disbursement-summary-cards-row {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 600px) {
-  .disbursement-summary-cards {
+  .disbursement-summary-cards-row {
     grid-template-columns: 1fr;
   }
 }

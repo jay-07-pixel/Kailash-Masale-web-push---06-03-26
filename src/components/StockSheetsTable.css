@@ -13,6 +13,14 @@
   font-size: 14px;
 }
 
+.stock-sheets-no-distributors {
+  text-align: center;
+  padding: 24px 16px;
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+}
+
 .stock-sheets-table {
   width: 100%;
   border-collapse: collapse;

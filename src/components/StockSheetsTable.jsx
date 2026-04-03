@@ -104,7 +104,6 @@ const StockSheetsTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =>
     const rows = []
     employees.forEach((emp) => {
       const assignedIds = emp.assignedDistributorIds || []
-      if (assignedIds.length === 0) return
       const search = (searchQuery || '').toLowerCase().trim()
       const empName = (emp.salesPersonName || emp.name || emp.email || '').toLowerCase()
       if (search && !empName.includes(search)) return
@@ -256,7 +255,9 @@ const StockSheetsTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =>
               <tr>
                 <td colSpan={4} className="stock-sheets-empty">
                   {isFirebaseConfigured && db
-                    ? 'No employees with assigned distributors. Assign distributors to employees on the Distributor page.'
+                    ? (employees.length === 0
+                      ? 'No employees found. Add employees in My Team.'
+                      : 'No employees match your search.')
                     : 'Connect Firebase to load data.'}
                 </td>
               </tr>
@@ -289,10 +290,11 @@ const StockSheetsTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =>
                       </button>
                     </td>
                   </tr>
-                  {expandedRows[row.id] && row.details && row.details.length > 0 && (
+                  {expandedRows[row.id] && (
                     <tr className="expanded-row">
                       <td colSpan="4" className="expanded-cell">
                         <div className="expanded-content">
+                          {row.details && row.details.length > 0 ? (
                           <table className="detail-table">
                             <thead>
                               <tr>
@@ -354,6 +356,9 @@ const StockSheetsTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) =>
                               ))}
                             </tbody>
                           </table>
+                          ) : (
+                            <p className="stock-sheets-no-distributors">No distributors assigned. Assign distributors on the Distributor page.</p>
+                          )}
                         </div>
                       </td>
                     </tr>

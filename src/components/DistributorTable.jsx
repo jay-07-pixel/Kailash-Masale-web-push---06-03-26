@@ -108,8 +108,8 @@ const DistributorTable = ({ distributors: firestoreDistributors = [], employees 
               <th>ZONE</th>
               <th>TARGET</th>
               <th>ASSIGN STAFF</th>
-              <th>ACTIONS</th>
-              <th>NOTES</th>
+              <th className="distributor-col-actions">ACTIONS</th>
+              <th className="distributor-col-notes">NOTES</th>
             </tr>
           </thead>
           <tbody>
@@ -194,7 +194,7 @@ const DistributorTable = ({ distributors: firestoreDistributors = [], employees 
                       </button>
                     </div>
                   </td>
-                  <td>
+                  <td className="distributor-col-actions">
                     <div className="distributor-action-icons">
                       <button
                         type="button"
@@ -216,7 +216,7 @@ const DistributorTable = ({ distributors: firestoreDistributors = [], employees 
                       </button>
                     </div>
                   </td>
-                  <td className="distributor-notes-cell">
+                  <td className="distributor-notes-cell distributor-col-notes">
                     <button
                       type="button"
                       className="distributor-notes-preview-btn"

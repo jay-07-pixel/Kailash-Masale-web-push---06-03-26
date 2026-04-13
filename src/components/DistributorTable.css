@@ -48,7 +48,7 @@
 }
 
 .table-wrapper {
-  overflow-x: auto;
+  overflow-x: visible;
 }
 
 .distributor-table-empty {
@@ -68,7 +68,7 @@
 .distributor-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 .distributor-table thead {
@@ -86,16 +86,16 @@
   border-bottom: 2px solid #e2e8f0;
 }
 
-/* Column widths so table fills container and NOTES takes remaining space */
+/* Column widths tuned to avoid compression without horizontal scrolling */
 .distributor-table th:nth-child(1),
 .distributor-table td:nth-child(1) {
-  width: 18%;
+  width: 20%;
   min-width: 0;
 }
 
 .distributor-table th:nth-child(2),
 .distributor-table td:nth-child(2) {
-  width: 16%;
+  width: 18%;
   min-width: 0;
   padding-right: 6px;
 }
@@ -117,19 +117,19 @@
 
 .distributor-table th:nth-child(5),
 .distributor-table td:nth-child(5) {
-  width: 14%;
-  min-width: 0;
+  width: 16%;
+  min-width: 140px;
 }
 
 .distributor-table th:nth-child(6),
 .distributor-table td:nth-child(6) {
-  width: 12%;
+  width: 9%;
   min-width: 0;
 }
 
 .distributor-table th:nth-child(7),
 .distributor-table td:nth-child(7) {
-  width: 12%;
+  width: 9%;
   min-width: 0;
 }
 
@@ -269,6 +269,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .staff-avatar {
@@ -316,6 +317,15 @@
   gap: 8px;
 }
 
+.distributor-col-actions,
+.distributor-col-notes {
+  text-align: right !important;
+}
+
+.distributor-col-actions .distributor-action-icons {
+  justify-content: flex-end;
+}
+
 .distributor-action-btn {
   border: none;
   padding: 6px;
@@ -359,7 +369,7 @@
   padding: 4px 0;
   cursor: pointer;
   display: block;
-  text-align: left;
+  text-align: right;
   font-size: inherit;
 }
 

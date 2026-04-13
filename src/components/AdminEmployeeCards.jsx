@@ -2,6 +2,7 @@ import React, { useMemo, useEffect } from 'react'
 import './AdminEmployeeCards.css'
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const TOTAL_MONTH_OPTION = 'Total'
 
 // Parse any date value to a JS Date — always dd/mm/yyyy (Indian format)
 function toDate(v) {
@@ -42,9 +43,14 @@ function fmtKg(val) {
 
 const AdminEmployeeCards = ({ checkIns = [], checkOuts = [], employees = [], distributors = [], selectedYear, selectedMonth, onCardsChange }) => {
   const monthIndex = MONTH_LABELS.indexOf(selectedMonth) // 0-based
+  const isTotalMonth = selectedMonth === TOTAL_MONTH_OPTION
 
   const cards = useMemo(() => {
-    const inMonth = (d) => d && d.getFullYear() === Number(selectedYear) && d.getMonth() === monthIndex
+    const inMonth = (d) => {
+      if (!d || d.getFullYear() !== Number(selectedYear)) return false
+      if (isTotalMonth) return true
+      return d.getMonth() === monthIndex
+    }
     const filteredOuts = checkOuts.filter((co) => inMonth(toDate(co.date || co.timestamp)))
     const filteredIns = checkIns.filter((ci) => inMonth(toDate(ci.timestamp || ci.date)))
 
@@ -127,7 +133,7 @@ const AdminEmployeeCards = ({ checkIns = [], checkOuts = [], employees = [], dis
 
       return { empKey, name, role, avatar, distRows }
     }).sort((a, b) => a.name.localeCompare(b.name))
-  }, [checkIns, checkOuts, employees, distributors, selectedYear, monthIndex])
+  }, [checkIns, checkOuts, employees, distributors, selectedYear, monthIndex, isTotalMonth])
 
   useEffect(() => {
     if (typeof onCardsChange === 'function' && selectedYear && selectedMonth) {

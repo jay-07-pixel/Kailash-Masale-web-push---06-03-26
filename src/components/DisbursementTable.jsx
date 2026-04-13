@@ -125,7 +125,7 @@ function parseAchievementPctFromDistributorDetail(dd) {
 function taDaStyleClasses(pct) {
   if (pct == null || Number.isNaN(pct)) return { taClass: '', daClass: '' }
   if (pct < 50) return { taClass: 'disb-tada-bold-red', daClass: 'disb-tada-bold-red' }
-  if (pct <= 70) return { taClass: '', daClass: 'disb-da-red' }
+  if (pct <= 75) return { taClass: '', daClass: 'disb-da-red' }
   return { taClass: 'disb-tada-bold-blue', daClass: 'disb-tada-bold-blue' }
 }
 
@@ -242,7 +242,7 @@ const DisbursementDetailRow = memo(function DisbursementDetailRow({ detail, ov, 
               <option value="auto">DA: Auto</option>
               <option value="redBold">DA: Red bold</option>
               <option value="blueBold">DA: Blue bold</option>
-              <option value="midRed">DA: Red (50–70%)</option>
+              <option value="midRed">DA: Red (50–75%)</option>
               <option value="withheld">DA: Withheld style</option>
               <option value="none">DA: Plain</option>
             </select>

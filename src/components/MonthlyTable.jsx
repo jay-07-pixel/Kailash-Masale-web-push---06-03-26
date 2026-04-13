@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { collection, onSnapshot, query, where, setDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
 import './MonthlyTable.css'
@@ -64,8 +64,17 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
   const [monthlyDataList, setMonthlyDataList] = useState([])
   const [monthlyData2, setMonthlyData2] = useState([])
   const [checkOuts, setCheckOuts] = useState([])
-  const [editModal, setEditModal] = useState({ open: false, row: null, form: null })
+  const [editModal, setEditModal] = useState({ open: false, row: null, form: null, selectedDistributorId: null })
   const [saveError, setSaveError] = useState(null)
+  const [editSaveSuccess, setEditSaveSuccess] = useState(null)
+  const pendingEditSyncRef = useRef(null)
+
+  const closeEditModal = () => {
+    pendingEditSyncRef.current = null
+    setEditSaveSuccess(null)
+    setSaveError(null)
+    setEditModal({ open: false, row: null, form: null, selectedDistributorId: null })
+  }
 
   useEffect(() => {
     if (!isFirebaseConfigured || !db) return
@@ -139,6 +148,8 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
 
   const openEdit = (row) => {
     setSaveError(null)
+    setEditSaveSuccess(null)
+    pendingEditSyncRef.current = null
     const firstDetail = row.details?.[0]
     const selectedDistributorId = firstDetail?.distributorId || null
     const initialForm = formFromDetail(firstDetail) || {
@@ -162,6 +173,7 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
   }
 
   const updateEditForm = (field, value) => {
+    setEditSaveSuccess(null)
     setEditModal((prev) => ({
       ...prev,
       form: { ...prev.form, [field]: value },
@@ -169,6 +181,7 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
   }
 
   const selectDistributorInModal = (distributorId) => {
+    setEditSaveSuccess(null)
     setEditModal((prev) => {
       if (!prev.row) return prev
       const detail = prev.row.details?.find((d) => d.distributorId === distributorId)
@@ -281,7 +294,8 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
         },
         { merge: true }
       )
-      setEditModal({ open: false, row: null, form: null, selectedDistributorId: null })
+      pendingEditSyncRef.current = { empId: row.id, distId: selectedDistributorId }
+      setEditSaveSuccess('Changes saved.')
     } catch (e) {
       console.error('saveEdit failed:', e)
       setSaveError(e.message || 'Failed to save')
@@ -535,6 +549,27 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
     return list.filter((r) => r.employee.name.toLowerCase().includes(q))
   }, [employees, distributors, monthlyDataList, checkoutLookup, targetLookup, searchQuery])
 
+  useEffect(() => {
+    const pending = pendingEditSyncRef.current
+    if (!pending || !editModal.open) return
+    const savedDoc = monthlyDataList.find((m) => m.employeeId === pending.empId)
+    const dd = savedDoc?.distributorDetails?.[pending.distId]
+    if (!dd) return
+    const fresh = tableData.find((r) => r.id === pending.empId)
+    if (!fresh) return
+    const detail = fresh.details?.find((d) => d.distributorId === pending.distId)
+    if (!detail) return
+    pendingEditSyncRef.current = null
+    setEditModal((prev) => {
+      if (!prev.open || prev.row?.id !== pending.empId) return prev
+      return {
+        ...prev,
+        row: fresh,
+        form: formFromDetail(detail) || prev.form,
+      }
+    })
+  }, [monthlyDataList, tableData, editModal.open, editModal.row?.id])
+
   // Sync each row to Firebase performance collection (year, month, employee, totalAchieved, etc.)
   useEffect(() => {
     if (!db || !year || !month || !tableData.length) return
@@ -715,13 +750,8 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
                                 <tr key={index}>
                                   <td>
                                     <div className="distributor-cell">
-                                      <div className="distributor-info">
-                                        <div className="distributor-name">
-                                          {detail.distributor.name}
-                                        </div>
-                                        <div className="distributor-location">
-                                          {detail.distributor.location}
-                                        </div>
+                                      <div className="distributor-name">
+                                        {detail.distributor.name}
                                       </div>
                                     </div>
                                   </td>
@@ -758,11 +788,17 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
       </div>
 
       {editModal.open && editModal.row && (
-        <div className="monthly-edit-modal-overlay" onClick={() => setEditModal((p) => ({ ...p, open: false }))}>
+        <div className="monthly-edit-modal-overlay" onClick={closeEditModal}>
           <div className="monthly-edit-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="monthly-edit-modal-title">
-              Edit — {editModal.row.employee.name} ({year} {month})
-            </h3>
+            <div className="monthly-edit-modal-header">
+              <h3 className="monthly-edit-modal-title">
+                Edit — {editModal.row.employee.name} ({year} {month})
+              </h3>
+              <button type="button" className="monthly-edit-modal-close" onClick={closeEditModal} aria-label="Close">
+                ×
+              </button>
+            </div>
+            {editSaveSuccess && <p className="monthly-edit-modal-success">{editSaveSuccess}</p>}
             {saveError && <p className="monthly-edit-modal-error">{saveError}</p>}
 
             <div className="monthly-edit-modal-box">
@@ -776,7 +812,7 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
                 <option value="">— Select —</option>
                 {(editModal.row.details || []).map((d) => (
                   <option key={d.distributorId} value={d.distributorId}>
-                    {d.distributor.name} {d.distributor.location && d.distributor.location !== '—' ? `(${d.distributor.location})` : ''}
+                    {d.distributor.name}
                   </option>
                 ))}
               </select>
@@ -859,7 +895,7 @@ const MonthlyTable = ({ year = '2026', month = 'Jan', searchQuery = '' }) => {
             )}
 
             <div className="monthly-edit-modal-actions">
-              <button type="button" className="monthly-edit-modal-cancel" onClick={() => setEditModal({ open: false, row: null, form: null, selectedDistributorId: null })}>
+              <button type="button" className="monthly-edit-modal-cancel" onClick={closeEditModal}>
                 Cancel
               </button>
               <button type="button" className="monthly-edit-modal-save" onClick={saveEdit} disabled={!editModal.selectedDistributorId}>

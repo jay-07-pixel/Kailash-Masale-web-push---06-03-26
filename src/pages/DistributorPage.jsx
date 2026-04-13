@@ -1,15 +1,20 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
 import UniversalHeader from '../components/UniversalHeader'
 import DistributorSummaryCards from '../components/DistributorSummaryCards'
 import DistributorTable from '../components/DistributorTable'
+import { rollupEmployeeRecordTotals, MONTH_LABELS } from '../utils/employeeRecordRollup'
 import './DistributorPage.css'
 
 const EMPLOYEES_COLLECTION = 'employees'
 const DISTRIBUTORS_COLLECTION = 'distributors'
+const MONTHLY_DATA2_COLLECTION = 'monthly_data'
+const MONTHLY_OVERRIDES_COLLECTION = 'monthlyData'
+const CHECK_OUTS_COLLECTION = 'check_outs'
 
 function DistributorPage() {
+  const now = new Date()
   const [searchQuery, setSearchQuery] = useState('')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [employeesFromFirebase, setEmployeesFromFirebase] = useState([])
@@ -28,6 +33,11 @@ function DistributorPage() {
   const [editForm, setEditForm] = useState({ employeeIds: [], distributorName: '', bits: [], zone: '' })
   const [editBitInput, setEditBitInput] = useState('')
   const [editEmployeeSelect, setEditEmployeeSelect] = useState('')
+  const [monthlyData2, setMonthlyData2] = useState([])
+  const [monthlyOverrides, setMonthlyOverrides] = useState([])
+  const [checkOuts, setCheckOuts] = useState([])
+  const [achievementYear, setAchievementYear] = useState(String(now.getFullYear()))
+  const [achievementMonth, setAchievementMonth] = useState(MONTH_LABELS[now.getMonth()])
 
   useEffect(() => {
     if (!isFirebaseConfigured || !db) return
@@ -46,6 +56,54 @@ function DistributorPage() {
     })
     return () => unsub()
   }, [])
+
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db) return
+    const unsub = onSnapshot(collection(db, MONTHLY_DATA2_COLLECTION), (snapshot) => {
+      setMonthlyData2(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })))
+    })
+    return () => unsub()
+  }, [])
+
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db) return
+    const unsub = onSnapshot(collection(db, MONTHLY_OVERRIDES_COLLECTION), (snapshot) => {
+      setMonthlyOverrides(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })))
+    })
+    return () => unsub()
+  }, [])
+
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db) return
+    const unsub = onSnapshot(collection(db, CHECK_OUTS_COLLECTION), (snapshot) => {
+      setCheckOuts(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })))
+    })
+    return () => unsub()
+  }, [])
+
+  const achievementRollup = useMemo(
+    () =>
+      rollupEmployeeRecordTotals({
+        employees: employeesFromFirebase,
+        distributors: distributorsFromFirebase,
+        monthlyData2,
+        monthlyOverrides,
+        checkOuts,
+        year: achievementYear,
+        monthLabel: achievementMonth,
+      }),
+    [
+      employeesFromFirebase,
+      distributorsFromFirebase,
+      monthlyData2,
+      monthlyOverrides,
+      checkOuts,
+      achievementYear,
+      achievementMonth,
+    ]
+  )
+
+  const achievementYearOptions = [0, 1, 2].map((i) => String(now.getFullYear() - i))
 
   const updateCreateForm = (field, value) => setCreateForm((f) => ({ ...f, [field]: value }))
 
@@ -274,7 +332,18 @@ function DistributorPage() {
           </button>
         </div>
 
-        <DistributorSummaryCards distributors={filteredDistributors} allDistributorsForTrend={distributorsFromFirebase} />
+        <DistributorSummaryCards
+          distributors={filteredDistributors}
+          allDistributorsForTrend={distributorsFromFirebase}
+          totalTargetKg={achievementRollup.totalTargetKg}
+          achievedPrimaryKg={achievementRollup.achievedPrimaryKg}
+          achievementPercent={achievementRollup.percent}
+          achievementYear={achievementYear}
+          achievementMonth={achievementMonth}
+          onAchievementYearChange={setAchievementYear}
+          onAchievementMonthChange={setAchievementMonth}
+          achievementYearOptions={achievementYearOptions}
+        />
         <DistributorTable
           distributors={filteredDistributors}
           employees={employeesFromFirebase}

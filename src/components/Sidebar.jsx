@@ -47,6 +47,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     },
     { icon: '💰', label: 'Disburment', path: '/disbursement' },
     { icon: '📈', label: 'report', path: '/reports' },
+    { icon: '🛡', label: 'ADMIN', path: '/admin' },
   ]
 
   const getPageTitle = () => {
@@ -148,7 +149,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             <Link
               key={index}
               to={item.path}
-              className={`nav-item ${isActive ? 'active' : ''}`}
+              className={`nav-item ${isActive ? 'active' : ''}${item.path === '/admin' ? ' sidebar-nav-admin' : ''}`}
               onClick={onClose}
             >
               {iconSrc ? (

@@ -18,8 +18,8 @@ function ExpenditureRulesIndex() {
           </li>
           <li>
             <strong>Colors (from monthly target vs achieved):</strong> Data comes from the same monthly sheet as the Monthly
-            page. <strong>Under 50%</strong> → TA &amp; DA in bold red. <strong>50%–70%</strong> → TA normal, DA in red.{' '}
-            <strong>Above 70%</strong> → TA &amp; DA in bold blue. Colors do not change rupee amounts.
+            page. <strong>Under 50%</strong> → TA &amp; DA in bold red. <strong>50%–75%</strong> → TA normal, DA in red.{' '}
+            <strong>Above 75%</strong> → TA &amp; DA in bold blue. Colors do not change rupee amounts.
           </li>
           <li>
             <strong>DA amount on screen:</strong> Taken from the master sheet for that route when it matches; otherwise from

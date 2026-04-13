@@ -227,7 +227,7 @@
   color: #2563eb;
 }
 
-/* monthlyData achieved %: <50% bold red; 50-70% DA red; >=70% bold blue */
+/* monthlyData achieved %: <50% bold red; 50–75% DA red; >75% bold blue */
 .disb-tada-bold-red {
   font-weight: 700;
   color: #dc2626;

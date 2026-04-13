@@ -397,11 +397,57 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
-.monthly-edit-modal-title {
-  margin: 0 0 16px;
+.monthly-edit-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.monthly-edit-modal-header .monthly-edit-modal-title {
+  margin: 0;
+  flex: 1;
   font-size: 16px;
   font-weight: 600;
   color: #111827;
+  line-height: 1.35;
+  padding-right: 8px;
+}
+
+.monthly-edit-modal-close {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: -6px -8px 0 0;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.monthly-edit-modal-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.monthly-edit-modal-success {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid #a7f3d0;
 }
 
 .monthly-edit-modal-error {

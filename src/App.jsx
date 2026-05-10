@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth, isFirebaseConfigured } from './firebase'
+import { initPushNotificationsForUser, cleanupPushNotificationsForUser } from './notifications/push'
 import Sidebar from './components/Sidebar'
 import LoginModal from './components/LoginModal'
 import Dashboard from './pages/Dashboard'
@@ -32,6 +33,13 @@ function App() {
     }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setAuthenticated(!!user)
+      if (user) {
+        initPushNotificationsForUser(user).catch((err) => {
+          console.warn('Push init skipped:', err?.message || err)
+        })
+      } else {
+        cleanupPushNotificationsForUser()
+      }
     })
     return () => unsubscribe()
   }, [])

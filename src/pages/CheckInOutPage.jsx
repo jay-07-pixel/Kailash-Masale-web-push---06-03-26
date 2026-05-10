@@ -43,6 +43,19 @@ function formatWorkTime(checkInTs, checkOutTs) {
   return `${hours}hrs:${mins.toString().padStart(2, '0')}mins`
 }
 
+/** Wall-clock time when CI/CO was recorded (for detail panel next to Maps link). */
+function formatCiCoClock(ts) {
+  const d = toDate(ts)
+  if (!d) return ''
+  return d.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Kolkata',
+  })
+}
+
 function formatDateLabel(ts) {
   const d = toDate(ts)
   if (!d) return { day: '—', date: '—' }
@@ -255,6 +268,8 @@ function CheckInOutPage() {
         checkOutLocation: checkOutLocation || '—',
         checkInMapsLink: checkInMapsLink && typeof checkInMapsLink === 'string' ? checkInMapsLink.trim() : '',
         checkOutMapsLink: checkOutMapsLink && typeof checkOutMapsLink === 'string' ? checkOutMapsLink.trim() : '',
+        checkInTime: formatCiCoClock(ci.timestamp),
+        checkOutTime: co ? formatCiCoClock(co.timestamp) : '',
         isOnLeave: !!ci.isOnLeave,
         checkInTs: ci.timestamp,
         checkOutTs: co?.timestamp,
@@ -280,6 +295,8 @@ function CheckInOutPage() {
       checkOutLocation: '—',
       checkInMapsLink: '',
       checkOutMapsLink: '',
+      checkInTime: '',
+      checkOutTime: '',
       isOnLeave: false,
       checkInTs: null,
       checkOutTs: null,

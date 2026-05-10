@@ -1,4 +1,4 @@
- import React, { useState } from 'react'
+import React, { useState } from 'react'
 import './CheckInOutTable.css'
 
 const isEmpty = (v) => v == null || v === '' || v === '—'
@@ -209,9 +209,20 @@ const CheckInOutTable = ({ tableData = [] }) => {
                         <h4 className="detail-panel-title">Check-in location</h4>
                         <p className="detail-panel-content">
                           {row.checkInMapsLink ? (
-                            <><a href={row.checkInMapsLink} target="_blank" rel="noopener noreferrer" className="checkinout-map-link">View on Google Maps</a> / {row.checkInLocation || '—'}</>
+                            <>
+                              <a href={row.checkInMapsLink} target="_blank" rel="noopener noreferrer" className="checkinout-map-link">View on Google Maps</a>
+                              {row.checkInTime ? (
+                                <span className="checkinout-map-time"> · {row.checkInTime}</span>
+                              ) : null}
+                              {' '}/ {row.checkInLocation || '—'}
+                            </>
                           ) : (
-                            row.checkInLocation ?? '—'
+                            <>
+                              {row.checkInLocation ?? '—'}
+                              {row.checkInTime ? (
+                                <span className="checkinout-map-time"> · {row.checkInTime}</span>
+                              ) : null}
+                            </>
                           )}
                         </p>
                       </div>
@@ -219,9 +230,20 @@ const CheckInOutTable = ({ tableData = [] }) => {
                         <h4 className="detail-panel-title">Check-out location</h4>
                         <p className="detail-panel-content">
                           {row.checkOutMapsLink ? (
-                            <><a href={row.checkOutMapsLink} target="_blank" rel="noopener noreferrer" className="checkinout-map-link">View on Google Maps</a> / {row.checkOutLocation || '—'}</>
+                            <>
+                              <a href={row.checkOutMapsLink} target="_blank" rel="noopener noreferrer" className="checkinout-map-link">View on Google Maps</a>
+                              {row.checkOutTime ? (
+                                <span className="checkinout-map-time"> · {row.checkOutTime}</span>
+                              ) : null}
+                              {' '}/ {row.checkOutLocation || '—'}
+                            </>
                           ) : (
-                            row.checkOutLocation ?? '—'
+                            <>
+                              {row.checkOutLocation ?? '—'}
+                              {row.checkOutTime ? (
+                                <span className="checkinout-map-time"> · {row.checkOutTime}</span>
+                              ) : null}
+                            </>
                           )}
                         </p>
                       </div>

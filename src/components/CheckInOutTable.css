@@ -201,3 +201,9 @@
 .checkinout-map-link:hover {
   text-decoration: underline;
 }
+
+.checkinout-map-time {
+  color: #64748b;
+  font-weight: 600;
+  white-space: nowrap;
+}

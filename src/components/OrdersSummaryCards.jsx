@@ -117,6 +117,13 @@ function getOrderDate(doc) {
   return null
 }
 
+function toNumber(value) {
+  if (value == null || value === '') return 0
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0
+  const parsed = parseFloat(String(value).replace(/[^\d.-]/g, ''))
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
 const OrdersSummaryCards = ({ year, month }) => {
   const [orders, setOrders] = useState([])
 
@@ -129,7 +136,7 @@ const OrdersSummaryCards = ({ year, month }) => {
   }, [])
 
   const stats = useMemo(() => {
-    const safe = { totalOrders: 0, pending: 0, totalKg: 0, selectedLabel: null }
+    const safe = { totalOrders: 0, pending: 0, confirmed: 0, totalKg: 0, confirmedKg: 0, volumePct: 0, totalOrderValue: 0, selectedLabel: null }
     try {
       const targetYear = year != null ? Number(year) : null
       const targetMonthIndex = month != null ? MONTH_LABELS.indexOf(String(month)) : -1
@@ -145,7 +152,23 @@ const OrdersSummaryCards = ({ year, month }) => {
       const orderGroups = getOrderGroupsFromDocs(filteredOrders)
       const totalOrders = orderGroups.length
       const pending = orderGroups.filter((lines) => getGroupStatus(lines) === 'Pending').length
+      const confirmed = orderGroups.filter((lines) => getGroupStatus(lines) === 'Placed').length
       const totalKg = filteredOrders.reduce((sum, o) => sum + (parseFloat(o.totalKg) || parseFloat(o.kg) || 0), 0)
+      const confirmedKg = filteredOrders
+        .filter((o) => (o.status || 'Pending') === 'Placed')
+        .reduce((sum, o) => sum + (parseFloat(o.totalKg) || parseFloat(o.kg) || 0), 0)
+      const totalOrderValue = filteredOrders.reduce((sum, o) => {
+        const value =
+          toNumber(o.orderValue) ||
+          toNumber(o.totalValue) ||
+          toNumber(o.totalAmount) ||
+          toNumber(o.amount) ||
+          toNumber(o.grandTotal) ||
+          toNumber(o.netAmount) ||
+          toNumber(o.value) ||
+          toNumber(o.finalAmount)
+        return sum + value
+      }, 0)
 
       const selectedLabel = month && year
         ? `${month} ${year}`
@@ -154,7 +177,11 @@ const OrdersSummaryCards = ({ year, month }) => {
       return {
         totalOrders: Number.isFinite(totalOrders) ? totalOrders : 0,
         pending: Number.isFinite(pending) ? pending : 0,
+        confirmed: Number.isFinite(confirmed) ? confirmed : 0,
         totalKg: Number.isFinite(totalKg) ? Math.round(totalKg * 10) / 10 : 0,
+        confirmedKg: Number.isFinite(confirmedKg) ? Math.round(confirmedKg * 10) / 10 : 0,
+        volumePct: totalKg > 0 ? Math.min(100, Math.round((confirmedKg / totalKg) * 1000) / 10) : 0,
+        totalOrderValue: Number.isFinite(totalOrderValue) ? Math.round(totalOrderValue * 100) / 100 : 0,
         selectedLabel,
       }
     } catch (_) {
@@ -172,17 +199,16 @@ const OrdersSummaryCards = ({ year, month }) => {
     },
     {
       title: 'Pending Approval',
-      value: String(stats.pending),
-      status: stats.pending > 0 ? 'Action required' : null,
-      subtitle: stats.pending === 0 ? 'No pending orders' : null,
-      statusType: 'warning',
+      value: stats.pending.toLocaleString(),
+      subtitle: stats.selectedLabel ? `In ${stats.selectedLabel}` : 'All time',
       iconBg: '#fef3c7',
-      icon: '⚠️',
+      icon: '✅',
     },
     {
-      title: 'Total Volume (Kg)',
-      value: `${stats.totalKg.toLocaleString()} kg`,
+      title: 'Order Volume',
+      value: `${stats.confirmedKg.toLocaleString()} kg / ${stats.totalKg.toLocaleString()} kg`,
       subtitle: stats.selectedLabel ? `In ${stats.selectedLabel}` : 'Across all SRAs',
+      volumePct: stats.volumePct,
       iconBg: '#ede9fe',
       icon: '🔔',
     },
@@ -192,8 +218,9 @@ const OrdersSummaryCards = ({ year, month }) => {
     <div className="orders-summary-cards">
       {cards.map((card, index) => {
         const isTotalOrders = card.title === 'Total Orders'
-        const isPendingApproval = card.title === 'Pending Approval'
-        const isTotalVolume = card.title === 'Total Volume (Kg)'
+        const isPendingApproval = card.title === 'Pending Approval' || card.title === 'Confirmed order /(Order received)'
+        const isTotalVolume = card.title === 'Order Volume'
+        const isOrderValue = card.title === 'Order Value'
         return (
           <div key={index} className="orders-summary-card">
             <div className="card-content-wrapper">
@@ -206,6 +233,14 @@ const OrdersSummaryCards = ({ year, month }) => {
               ) : card.subtitle ? (
                 <div className="card-subtitle">{card.subtitle}</div>
               ) : null}
+              {typeof card.volumePct === 'number' ? (
+                <div className="card-volume-progress-wrap">
+                  <div className="card-volume-progress-bar" aria-hidden>
+                    <span className="card-volume-progress-fill" style={{ width: `${card.volumePct}%` }} />
+                  </div>
+                  <div className="card-volume-progress-text">{card.volumePct.toFixed(1)}% confirmed</div>
+                </div>
+              ) : null}
             </div>
             <div
               className={`card-icon-wrapper ${
@@ -215,6 +250,8 @@ const OrdersSummaryCards = ({ year, month }) => {
                   ? 'pending-approval-wrapper'
                   : isTotalVolume
                   ? 'total-volume-wrapper'
+                  : isOrderValue
+                  ? 'order-value-wrapper'
                   : ''
               }`}
               style={{ backgroundColor: card.iconBg }}
@@ -237,6 +274,8 @@ const OrdersSummaryCards = ({ year, month }) => {
                   alt="Total Volume"
                   className="card-icon-image total-volume-icon"
                 />
+              ) : isOrderValue ? (
+                <span className="card-icon" aria-hidden>{card.icon}</span>
               ) : (
                 <span className="card-icon">{card.icon}</span>
               )}

@@ -28,6 +28,16 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Notifications: in-app notification inbox (e.g. task assigned)
+    match /notifications/{notificationId} {
+      allow read, write: if true;
+    }
+
+    // FCM tokens per user/device (used by Cloud Function push sender)
+    match /user_push_tokens/{tokenId} {
+      allow read, write: if true;
+    }
+
     // Leave applications: app writes on leave form submit
     match /leave_applications/{document=**} {
       allow read, write: if true;

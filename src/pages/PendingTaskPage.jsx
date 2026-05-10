@@ -11,6 +11,7 @@ import './PendingTaskPage.css'
 
 const EMPLOYEES_COLLECTION = 'employees'
 const TASKS_COLLECTION = 'tasks'
+const NOTIFICATIONS_COLLECTION = 'notifications'
 
 function PendingTaskPage() {
   const [activeTab, setActiveTab] = useState('pending')
@@ -40,12 +41,29 @@ function PendingTaskPage() {
   const handleAssignTask = async (employeeId, taskDescription, status = 'pending') => {
     if (!db || !employeeId?.trim() || !taskDescription?.trim()) return
     try {
-      await addDoc(collection(db, TASKS_COLLECTION), {
-        employeeId: employeeId.trim(),
+      const trimmedEmployeeId = employeeId.trim()
+      const taskRef = await addDoc(collection(db, TASKS_COLLECTION), {
+        employeeId: trimmedEmployeeId,
         description: taskDescription.trim(),
         status,
         createdAt: serverTimestamp(),
       })
+      const assignedEmp = employees.find((e) => e.id === trimmedEmployeeId)
+      const assignedName = assignedEmp?.salesPersonName || assignedEmp?.name || assignedEmp?.email || 'Employee'
+      const assignedEmail = String(assignedEmp?.email || '').trim().toLowerCase()
+      if (assignedEmail) {
+        await addDoc(collection(db, NOTIFICATIONS_COLLECTION), {
+          type: 'task_assigned',
+          userId: trimmedEmployeeId,
+          userEmail: assignedEmail,
+          title: 'New task assigned',
+          body: taskDescription.trim(),
+          taskId: taskRef.id,
+          employeeName: assignedName,
+          read: false,
+          createdAt: serverTimestamp(),
+        })
+      }
       setIsAssignTaskModalOpen(false)
     } catch (err) {
       console.error('Failed to assign task:', err)

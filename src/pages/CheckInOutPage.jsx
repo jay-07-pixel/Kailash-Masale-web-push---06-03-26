@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { collection, onSnapshot } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
 import UniversalHeader from '../components/UniversalHeader'
 import CheckInOutSummaryCards from '../components/CheckInOutSummaryCards'
 import CheckInOutFilters from '../components/CheckInOutFilters'
 import CheckInOutTable from '../components/CheckInOutTable'
+import { geoCacheKey, labelLooksLikeLatCommaLng, reverseGeocode } from '../utils/reverseGeocode'
 import './CheckInOutPage.css'
 
 const CHECK_INS_COLLECTION = 'check_ins'
@@ -12,6 +13,14 @@ const CHECK_OUTS_COLLECTION = 'check_outs'
 const EMPLOYEES_COLLECTION = 'employees'
 const DISTRIBUTORS_COLLECTION = 'distributors'
 const LOCATIONS_COLLECTION = 'locations'
+
+/** Open Maps at lat/lng when the app did not save a `checkInMapsLink` / `checkOutMapsLink` field. */
+function googleMapsSearchUrl(lat, lng) {
+  const la = Number(lat)
+  const ln = Number(lng)
+  if (lat == null || lng == null || Number.isNaN(la) || Number.isNaN(ln)) return ''
+  return `https://www.google.com/maps/search/?api=1&query=${la},${ln}`
+}
 
 // Haversine: distance in meters between two lat/lng points
 function haversineMeters(lat1, lng1, lat2, lng2) {
@@ -101,6 +110,13 @@ function CheckInOutPage() {
   const [locations, setLocations] = useState([])
   const [selectedDate, setSelectedDate] = useState(() => getTodayDateStr())
   const [searchQuery, setSearchQuery] = useState('')
+  /** Nominatim cache: rounded "lat,lng" → place label */
+  const [geoNames, setGeoNames] = useState({})
+  const geoFetchInFlight = useRef(new Set())
+  const geoNamesRef = useRef({})
+  useEffect(() => {
+    geoNamesRef.current = geoNames
+  }, [geoNames])
 
   useEffect(() => {
     if (!isFirebaseConfigured || !db) return
@@ -188,29 +204,62 @@ function CheckInOutPage() {
         const n = parseFloat(s)
         return isNaN(n) ? null : n
       }
+      const readLatLngObject = (o) => {
+        if (!o || typeof o !== 'object') return null
+        const inner = o.coords ?? o.coordinates ?? o.position ?? o.geoPoint
+        const src = inner && typeof inner === 'object' ? inner : o
+        const lat = src.latitude ?? src.lat ?? src._lat ?? src._latitude
+        const lng = src.longitude ?? src.lng ?? src._long ?? src._longitude ?? src.long
+        if (lat == null || lng == null) return null
+        const la = Number(lat)
+        const ln = Number(lng)
+        return !isNaN(la) && !isNaN(ln) ? { lat: la, lng: ln } : null
+      }
+
       const extractCoords = (doc, preferField) => {
         if (!doc) return null
-        const checkIn = doc.checkInLocation ?? doc.check_in_location ?? doc.checkinLocation
-        const checkOut = doc.checkOutLocation ?? doc.check_out_location ?? doc.checkoutLocation ?? doc.outLocation
-        const raw = preferField === 'checkOut' ? (checkOut ?? checkIn) : (checkIn ?? checkOut)
+        // Align with DisbursementTable / mobile: place may live on `location` only
+        const checkIn =
+          doc.checkInLocation ??
+          doc.check_in_location ??
+          doc.checkinLocation ??
+          doc.startLocation ??
+          doc.checkInLoc
+        const checkOut =
+          doc.checkOutLocation ??
+          doc.check_out_location ??
+          doc.checkoutLocation ??
+          doc.outLocation ??
+          doc.endLocation
+        const generic = doc.location
+        const raw =
+          preferField === 'checkOut'
+            ? (checkOut ?? generic ?? checkIn)
+            : (checkIn ?? generic ?? checkOut)
         if (Array.isArray(raw) && raw.length >= 2) {
           const a = parseCoord(raw[0])
           const b = parseCoord(raw[1])
           if (a != null && b != null) return { lat: a, lng: b }
         }
-        if (raw && typeof raw === 'object') {
-          const lat = raw.latitude ?? raw.lat ?? raw._lat
-          const lng = raw.longitude ?? raw.lng ?? raw._long
-          if (lat != null && lng != null) return { lat: Number(lat), lng: Number(lng) }
+        const fromObj = readLatLngObject(raw)
+        if (fromObj) return fromObj
+        if (typeof raw === 'string' && raw.trim()) {
+          const parts = raw.split(/[,\s]+/).map((p) => parseCoord(String(p).trim())).filter((n) => n != null)
+          if (parts.length >= 2) return { lat: parts[0], lng: parts[1] }
         }
         const lat = doc.latitude ?? doc.lat
         const lng = doc.longitude ?? doc.lng
         if (lat != null && lng != null) return { lat: Number(lat), lng: Number(lng) }
-        const str = doc.location ?? doc.address ?? doc.coordinates
-        if (typeof str === 'string') {
-          const parts = str.split(/[,\s]+/).map((p) => parseCoord(p.trim())).filter((n) => n != null)
+        const coordStr =
+          (typeof generic === 'string' && generic.trim() ? generic : '') ||
+          (typeof doc.address === 'string' ? doc.address : '') ||
+          (typeof doc.coordinates === 'string' ? doc.coordinates : '')
+        if (coordStr.trim()) {
+          const parts = coordStr.split(/[,\s]+/).map((p) => parseCoord(p.trim())).filter((n) => n != null)
           if (parts.length >= 2) return { lat: parts[0], lng: parts[1] }
         }
+        const nestCoords = readLatLngObject(typeof generic === 'object' ? generic : null)
+        if (nestCoords) return nestCoords
         return null
       }
       const resolveToLocationName = (lat, lng) => {
@@ -234,22 +283,49 @@ function CheckInOutPage() {
           if (name) return name
           return `${coords.lat}, ${coords.lng}`
         }
-        const ciStr = str(doc.checkInLocation) || str(doc.check_in_location) || str(doc.checkinLocation)
-        const coStr = str(doc.checkOutLocation) || str(doc.check_out_location) || str(doc.checkoutLocation) || str(doc.outLocation)
-        const locStr = preferField === 'checkOut' ? (coStr || ciStr) : (ciStr || coStr) || str(doc.address)
+        const ciStr =
+          str(doc.checkInLocation) ||
+          str(doc.check_in_location) ||
+          str(doc.checkinLocation) ||
+          str(doc.startLocation)
+        const coStr =
+          str(doc.checkOutLocation) ||
+          str(doc.check_out_location) ||
+          str(doc.checkoutLocation) ||
+          str(doc.outLocation) ||
+          str(doc.endLocation)
+        const named =
+          str(doc.locationName) ||
+          str(doc.placeName) ||
+          str(doc.formattedAddress) ||
+          str(doc.address) ||
+          str(doc.locationAddress)
+        const locStr =
+          named ||
+          (preferField === 'checkOut' ? coStr || ciStr : ciStr || coStr) ||
+          (typeof doc.location === 'string' ? str(doc.location) : '')
         if (locStr) return locStr
         if (doc.location && typeof doc.location === 'string') return doc.location.trim()
-        const nest = doc.location && typeof doc.location === 'object'
+        const nest = doc.location && typeof doc.location === 'object' ? doc.location : null
         if (nest) {
-          if (nest.address && typeof nest.address === 'string') return nest.address.trim()
-          if (nest.latitude != null && nest.longitude != null) return `${nest.latitude}, ${nest.longitude}`
+          if (typeof nest.address === 'string' && nest.address.trim()) return nest.address.trim()
+          const ll = readLatLngObject(nest)
+          if (ll) {
+            const name = resolveToLocationName(ll.lat, ll.lng)
+            if (name) return name
+            return `${ll.lat}, ${ll.lng}`
+          }
         }
         return null
       }
       const checkInLocation = formatLoc(ci, 'checkIn') ?? formatLoc(co, 'checkIn')
       const checkOutLocation = co ? (formatLoc(co, 'checkOut') || '—') : '—'
-      const checkInMapsLink = ci.checkInMapsLink ?? ci.check_in_maps_link ?? ''
-      const checkOutMapsLink = co?.checkOutMapsLink ?? co?.check_out_maps_link ?? ''
+      const storedInLink = String(ci.checkInMapsLink ?? ci.check_in_maps_link ?? '').trim()
+      const storedOutLink = String(co?.checkOutMapsLink ?? co?.check_out_maps_link ?? '').trim()
+      const coordsInForLink = extractCoords(ci, 'checkIn') ?? extractCoords(co, 'checkIn')
+      const coordsOutForLink = co ? (extractCoords(co, 'checkOut') ?? extractCoords(ci, 'checkOut')) : null
+      const checkInMapsLink = storedInLink || googleMapsSearchUrl(coordsInForLink?.lat, coordsInForLink?.lng)
+      const checkOutMapsLink = storedOutLink || googleMapsSearchUrl(coordsOutForLink?.lat, coordsOutForLink?.lng)
       return {
         id: ci.id,
         date: formatDateLabel(ci.timestamp),
@@ -274,6 +350,8 @@ function CheckInOutPage() {
         checkInTs: ci.timestamp,
         checkOutTs: co?.timestamp,
         ciDate: ci.date,
+        checkInGeo: coordsInForLink ? { lat: coordsInForLink.lat, lng: coordsInForLink.lng } : null,
+        checkOutGeo: coordsOutForLink ? { lat: coordsOutForLink.lat, lng: coordsOutForLink.lng } : null,
       }
     }
 
@@ -301,6 +379,8 @@ function CheckInOutPage() {
       checkInTs: null,
       checkOutTs: null,
       ciDate: null,
+      checkInGeo: null,
+      checkOutGeo: null,
     })
 
     // One row per employee; show check-in/check-out for selected date only
@@ -340,6 +420,57 @@ function CheckInOutPage() {
       return (a.employeeName || '').localeCompare(b.employeeName || '', undefined, { sensitivity: 'base' })
     })
   }, [tableRows, searchQuery])
+
+  const tableDataWithGeoNames = useMemo(() => {
+    return filteredRows.map((r) => {
+      const inK = r.checkInGeo ? geoCacheKey(r.checkInGeo.lat, r.checkInGeo.lng) : null
+      const outK = r.checkOutGeo ? geoCacheKey(r.checkOutGeo.lat, r.checkOutGeo.lng) : null
+      const inLabel = inK && geoNames[inK] ? geoNames[inK] : r.checkInLocation
+      const outLabel = outK && geoNames[outK] ? geoNames[outK] : r.checkOutLocation
+      return { ...r, checkInLocation: inLabel, checkOutLocation: outLabel }
+    })
+  }, [filteredRows, geoNames])
+
+  useEffect(() => {
+    let cancelled = false
+    const tasks = []
+    const seen = new Set()
+    const push = (geo, locLabel) => {
+      if (!geo || !labelLooksLikeLatCommaLng(locLabel)) return
+      const k = geoCacheKey(geo.lat, geo.lng)
+      if (seen.has(k)) return
+      seen.add(k)
+      tasks.push({ k, lat: geo.lat, lng: geo.lng })
+    }
+    for (const r of filteredRows) {
+      push(r.checkInGeo, r.checkInLocation)
+      push(r.checkOutGeo, r.checkOutLocation)
+    }
+    const todo = tasks.filter((t) => !geoNamesRef.current[t.k] && !geoFetchInFlight.current.has(t.k))
+    if (todo.length === 0) return undefined
+    todo.forEach((t) => geoFetchInFlight.current.add(t.k))
+
+    void (async () => {
+      for (const { k, lat, lng } of todo) {
+        if (cancelled) break
+        await new Promise((resolve) => setTimeout(resolve, 1100))
+        if (cancelled) break
+        if (geoNamesRef.current[k]) {
+          geoFetchInFlight.current.delete(k)
+          continue
+        }
+        const label = await reverseGeocode(lat, lng)
+        geoFetchInFlight.current.delete(k)
+        if (!label || cancelled) continue
+        setGeoNames((prev) => (prev[k] ? prev : { ...prev, [k]: label }))
+      }
+    })()
+
+    return () => {
+      cancelled = true
+      todo.forEach((t) => geoFetchInFlight.current.delete(t.k))
+    }
+  }, [filteredRows])
 
   const summary = useMemo(() => {
     // Only count rows that have an actual check-in on the selected date (calendar filter)
@@ -385,7 +516,7 @@ function CheckInOutPage() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
         />
-        <CheckInOutTable tableData={filteredRows} />
+        <CheckInOutTable tableData={tableDataWithGeoNames} />
       </div>
     </div>
   )

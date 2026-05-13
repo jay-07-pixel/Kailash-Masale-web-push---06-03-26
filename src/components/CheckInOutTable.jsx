@@ -17,6 +17,13 @@ const locationsSubmitted = (row) =>
 
 const showRnsFor = (row, fieldEmpty) => locationsSubmitted(row) && fieldEmpty
 
+/** Only show CI/CO clock when we have a map link or a resolved place (not placeholder). */
+const canShowCiCoTime = (mapsLink, locationLabel) => {
+  const link = mapsLink && String(mapsLink).trim()
+  const loc = locationLabel != null && String(locationLabel).trim() && locationLabel !== '—'
+  return !!(link || loc)
+}
+
 const CheckInOutTable = ({ tableData = [] }) => {
   const [expandedNotes, setExpandedNotes] = useState({})
 
@@ -211,7 +218,7 @@ const CheckInOutTable = ({ tableData = [] }) => {
                           {row.checkInMapsLink ? (
                             <>
                               <a href={row.checkInMapsLink} target="_blank" rel="noopener noreferrer" className="checkinout-map-link">View on Google Maps</a>
-                              {row.checkInTime ? (
+                              {canShowCiCoTime(row.checkInMapsLink, row.checkInLocation) && row.checkInTime ? (
                                 <span className="checkinout-map-time"> · {row.checkInTime}</span>
                               ) : null}
                               {' '}/ {row.checkInLocation || '—'}
@@ -219,7 +226,7 @@ const CheckInOutTable = ({ tableData = [] }) => {
                           ) : (
                             <>
                               {row.checkInLocation ?? '—'}
-                              {row.checkInTime ? (
+                              {canShowCiCoTime('', row.checkInLocation) && row.checkInTime ? (
                                 <span className="checkinout-map-time"> · {row.checkInTime}</span>
                               ) : null}
                             </>
@@ -232,7 +239,7 @@ const CheckInOutTable = ({ tableData = [] }) => {
                           {row.checkOutMapsLink ? (
                             <>
                               <a href={row.checkOutMapsLink} target="_blank" rel="noopener noreferrer" className="checkinout-map-link">View on Google Maps</a>
-                              {row.checkOutTime ? (
+                              {canShowCiCoTime(row.checkOutMapsLink, row.checkOutLocation) && row.checkOutTime ? (
                                 <span className="checkinout-map-time"> · {row.checkOutTime}</span>
                               ) : null}
                               {' '}/ {row.checkOutLocation || '—'}
@@ -240,7 +247,7 @@ const CheckInOutTable = ({ tableData = [] }) => {
                           ) : (
                             <>
                               {row.checkOutLocation ?? '—'}
-                              {row.checkOutTime ? (
+                              {canShowCiCoTime('', row.checkOutLocation) && row.checkOutTime ? (
                                 <span className="checkinout-map-time"> · {row.checkOutTime}</span>
                               ) : null}
                             </>
